@@ -8,7 +8,7 @@ import 'features/authentication/login_screen.dart';
 import 'features/authentication/splash_screen.dart';
 import 'features/camera/capture_confirmation_screen.dart';
 import 'features/camera/secure_camera_screen.dart';
-import 'features/dashboard/dashboard_screen.dart';
+import 'features/dashboard/role_router.dart';
 import 'features/evidence/evidence_details_screen.dart';
 import 'features/evidence/my_evidence_screen.dart';
 import 'features/profile/profile_screen.dart';
@@ -44,7 +44,7 @@ class GeoEvidenceApp extends StatelessWidget {
         routes: {
           AppRoutes.splash: (_) => const SplashScreen(),
           AppRoutes.login: (_) => const LoginScreen(),
-          AppRoutes.dashboard: (_) => const DashboardScreen(),
+          AppRoutes.dashboard: (_) => const RoleRouter(),
           AppRoutes.secureCamera: (_) => const SecureCameraScreen(),
           AppRoutes.captureConfirmation: (_) =>
               const CaptureConfirmationScreen(),

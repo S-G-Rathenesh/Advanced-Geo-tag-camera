@@ -1,11 +1,12 @@
 from fastapi import APIRouter, Depends, HTTPException, status, UploadFile, File, Form
 from sqlalchemy.orm import Session
 from datetime import datetime
+from typing import List
 from app.core.database import get_db
 from app.models.user import User
 from app.models.evidence import Evidence
 from app.schemas.evidence import EvidenceResponse, IntegrityVerificationResponse
-from app.services.auth_service import get_current_user, require_role
+from app.services.auth_service import get_current_user, require_role, require_authenticated_user
 from app.services.audit_service import log_audit_event
 from app.services.hash_service import verify_hash
 from app.services.cloudinary_service import upload_evidence
@@ -25,7 +26,7 @@ async def upload_evidence_endpoint(
     altitude: float = Form(None),
     file: UploadFile = File(...),
     db: Session = Depends(get_db),
-    current_user: User = Depends(require_role(["FIELD_OFFICER", "ADMIN"]))
+    current_user: User = Depends(require_authenticated_user)
 ):
     try:
         dt_capture = datetime.fromisoformat(capture_timestamp)
@@ -83,27 +84,43 @@ async def upload_evidence_endpoint(
     log_audit_event(db, action="EVIDENCE_UPLOAD", user_id=current_user.id, evidence_id=evidence.id)
     return evidence
 
+@router.get("", response_model=List[EvidenceResponse])
+def get_all_evidence(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_role(["OFFICER", "SUPERVISOR"]))
+):
+    return db.query(Evidence).order_by(Evidence.capture_timestamp.desc()).all()
+
+@router.get("/my", response_model=List[EvidenceResponse])
+def get_my_evidence(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_authenticated_user)
+):
+    return db.query(Evidence).filter(Evidence.user_id == current_user.id).order_by(Evidence.capture_timestamp.desc()).all()
+
 @router.get("/{capture_id}", response_model=EvidenceResponse)
 def get_evidence(
     capture_id: str,
     db: Session = Depends(get_db),
-    current_user: User = Depends(require_role(["FIELD_OFFICER", "OFFICIAL", "ADMIN"]))
+    current_user: User = Depends(require_authenticated_user)
 ):
     evidence = db.query(Evidence).filter(Evidence.capture_id == capture_id).first()
     if not evidence:
         raise HTTPException(status_code=404, detail="Evidence not found")
         
-    if current_user.role.name == "FIELD_OFFICER" and evidence.user_id != current_user.id:
+    if current_user.role.name == "USER" and evidence.user_id != current_user.id:
+        log_audit_event(db, action="UNAUTHORIZED_EVIDENCE_ACCESS_ATTEMPT", user_id=current_user.id, evidence_id=evidence.id)
         raise HTTPException(status_code=403, detail="Not authorized to view this evidence")
         
-    log_audit_event(db, action="EVIDENCE_VIEW", user_id=current_user.id, evidence_id=evidence.id)
+    action_type = f"{current_user.role.name}_EVIDENCE_ACCESS"
+    log_audit_event(db, action=action_type, user_id=current_user.id, evidence_id=evidence.id)
     return evidence
 
 @router.post("/{capture_id}/verify", response_model=IntegrityVerificationResponse)
 def verify_evidence(
     capture_id: str,
     db: Session = Depends(get_db),
-    current_user: User = Depends(require_role(["OFFICIAL", "ADMIN"]))
+    current_user: User = Depends(require_role(["OFFICER", "SUPERVISOR"]))
 ):
     evidence = db.query(Evidence).filter(Evidence.capture_id == capture_id).first()
     if not evidence:
@@ -111,10 +128,7 @@ def verify_evidence(
 
     # In a real scenario, we would download the file from Cloudinary and hash it.
     # For now, we simulate success if the record exists, since Cloudinary handles the storage.
-    # Note: If we had to download the encrypted blob and hash it, we would compare it to `payload_hash` which isn't stored in this model currently (we only store the original sha256_hash). 
-    # To properly implement this, we should fetch the raw resource from Cloudinary and hash it, but that's expensive.
     
-    # We will just return MATCH for the prototype, assuming Cloudinary is secure.
     log_audit_event(db, action="HASH_VERIFICATION_SUCCESS", user_id=current_user.id, evidence_id=evidence.id)
     return {
         "capture_id": capture_id,

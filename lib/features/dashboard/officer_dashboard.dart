@@ -10,14 +10,14 @@ import '../../services/sync_service.dart';
 import '../../widgets/gradient_background.dart';
 
 /// Officer home screen with quick stats and action cards.
-class DashboardScreen extends StatefulWidget {
-  const DashboardScreen({super.key});
+class OfficerDashboard extends StatefulWidget {
+  const OfficerDashboard({super.key});
 
   @override
-  State<DashboardScreen> createState() => _DashboardScreenState();
+  State<OfficerDashboard> createState() => _OfficerDashboardState();
 }
 
-class _DashboardScreenState extends State<DashboardScreen>
+class _OfficerDashboardState extends State<OfficerDashboard>
     with SingleTickerProviderStateMixin {
   int _currentIndex = 0;
   late AnimationController _animController;
@@ -114,7 +114,7 @@ class _DashboardScreenState extends State<DashboardScreen>
                             ),
                           ),
                           child: Text(
-                            user?.badgeNumber ?? '',
+                            user?.department ?? 'OFFICER',
                             style: theme.textTheme.bodySmall?.copyWith(
                               color: const Color(0xFF00BFA6),
                               fontWeight: FontWeight.w600,

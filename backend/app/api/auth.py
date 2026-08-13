@@ -2,41 +2,116 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from app.core.database import get_db
 from app.models.user import User
-from app.schemas.auth import LoginRequest, Token
+from app.models.role import Role
+from app.schemas.auth import LoginRequest, GoogleAuthRequest, Token
 from app.core.security import verify_password, create_access_token
 from app.services.audit_service import log_audit_event
+from app.services.auth_service import require_authenticated_user
+from datetime import datetime, timezone
+import json
+import base64
 
 router = APIRouter()
 
-@router.post("/login", response_model=Token)
-def login(request: LoginRequest, db: Session = Depends(get_db)):
+@router.get("/me")
+def get_me(current_user: User = Depends(require_authenticated_user)):
+    return current_user
+
+@router.post("/officer/login", response_model=Token)
+def officer_login(request: LoginRequest, db: Session = Depends(get_db)):
     user = db.query(User).filter(User.username == request.username).first()
     
-    if not user or not verify_password(request.password, user.password_hash):
+    if not user or not user.password_hash or not verify_password(request.password, user.password_hash):
         if user:
-            log_audit_event(db, user_id=user.id, action="LOGIN_FAILURE", details="Invalid password")
+            log_audit_event(db, user_id=user.id, action="OFFICER_LOGIN_FAILURE", details="Invalid password")
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Incorrect username or password",
         )
     
-    if not user.is_active:
-        log_audit_event(db, user_id=user.id, action="LOGIN_FAILURE", details="Inactive account")
-        raise HTTPException(status_code=400, detail="Inactive user")
+    if not user.is_active or user.role.name != "OFFICER":
+        log_audit_event(db, user_id=user.id, action="OFFICER_LOGIN_FAILURE", details="Inactive account or not an officer")
+        raise HTTPException(status_code=403, detail="Unauthorized access")
 
     access_token = create_access_token(subject=user.id)
     
-    log_audit_event(db, user_id=user.id, action="LOGIN_SUCCESS")
+    user.last_login_at = datetime.now(timezone.utc)
+    db.commit()
+
+    log_audit_event(db, user_id=user.id, action="OFFICER_LOGIN_SUCCESS")
     
     return {
         "access_token": access_token,
         "token_type": "bearer",
-        "user": {
-            "id": user.id,
-            "username": user.username,
-            "full_name": user.full_name,
-            "department": user.department,
-            "is_active": user.is_active,
-            "role": user.role.name
-        }
+        "user": user
+    }
+
+@router.post("/google", response_model=Token)
+def google_auth(request: GoogleAuthRequest, db: Session = Depends(get_db)):
+    # IN A REAL APP: Verify the id_token using google.oauth2.id_token.verify_oauth2_token
+    # FOR THIS PROTOTYPE: We decode the mock JWT token without verifying signature 
+    # to allow the Flutter mock auth mechanism to work locally.
+    
+    try:
+        parts = request.id_token.split(".")
+        if len(parts) != 3:
+            raise ValueError("Invalid JWT format")
+        
+        # Add padding if needed
+        payload_b64 = parts[1]
+        payload_b64 += "=" * ((4 - len(payload_b64) % 4) % 4)
+        
+        payload_json = base64.urlsafe_b64decode(payload_b64).decode("utf-8")
+        payload = json.loads(payload_json)
+        
+        email = payload.get("email")
+        google_subject_id = payload.get("sub")
+        name = payload.get("name")
+        picture = payload.get("picture")
+        
+        if not email or not google_subject_id:
+            raise ValueError("Missing email or sub in token")
+            
+    except Exception as e:
+        log_audit_event(db, action="GOOGLE_LOGIN_FAILURE", details=str(e))
+        raise HTTPException(status_code=401, detail="Invalid Google token")
+        
+    user = db.query(User).filter(User.google_subject_id == google_subject_id).first()
+    
+    # Also check if user exists by email (for demo seeding match)
+    if not user:
+        user = db.query(User).filter(User.email == email).first()
+        if user:
+            user.google_subject_id = google_subject_id
+            db.commit()
+
+    if not user:
+        # Create new user
+        role_user = db.query(Role).filter(Role.name == "USER").first()
+        user = User(
+            google_subject_id=google_subject_id,
+            email=email,
+            name=name,
+            profile_image=picture,
+            role_id=role_user.id,
+            is_active=True
+        )
+        db.add(user)
+        db.commit()
+        db.refresh(user)
+        
+    if not user.is_active:
+        log_audit_event(db, user_id=user.id, action="GOOGLE_LOGIN_FAILURE", details="Inactive account")
+        raise HTTPException(status_code=403, detail="Inactive user")
+        
+    access_token = create_access_token(subject=user.id)
+    user.last_login_at = datetime.now(timezone.utc)
+    db.commit()
+    
+    log_audit_event(db, user_id=user.id, action="GOOGLE_LOGIN_SUCCESS")
+    
+    return {
+        "access_token": access_token,
+        "token_type": "bearer",
+        "user": user
     }

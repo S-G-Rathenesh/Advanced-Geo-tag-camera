@@ -9,6 +9,7 @@ class AuditLog(Base):
 
     id = Column(String, primary_key=True, default=lambda: str(uuid.uuid4()), index=True)
     user_id = Column(String, ForeignKey("users.id"), nullable=True, index=True)
+    target_user_id = Column(String, ForeignKey("users.id"), nullable=True, index=True)
     evidence_id = Column(String, ForeignKey("evidence.id"), nullable=True, index=True)
     
     action = Column(String, nullable=False, index=True)
@@ -18,5 +19,5 @@ class AuditLog(Base):
     timestamp = Column(DateTime(timezone=True), server_default=func.now(), index=True)
     details = Column(Text)
 
-    user = relationship("User", back_populates="audit_logs")
+    user = relationship("User", back_populates="audit_logs", foreign_keys=[user_id])
     evidence = relationship("Evidence", back_populates="audit_logs")

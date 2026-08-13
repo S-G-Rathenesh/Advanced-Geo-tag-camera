@@ -5,6 +5,7 @@ def log_audit_event(
     db: Session,
     action: str,
     user_id: str = None,
+    target_user_id: str = None,
     evidence_id: str = None,
     ip_address: str = None,
     device_id: str = None,
@@ -12,6 +13,7 @@ def log_audit_event(
 ):
     audit_log = AuditLog(
         user_id=user_id,
+        target_user_id=target_user_id,
         evidence_id=evidence_id,
         action=action,
         ip_address=ip_address,

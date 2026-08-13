@@ -6,10 +6,8 @@ import '../../models/login_request.dart';
 import '../../services/auth_service.dart';
 import '../../widgets/gradient_background.dart';
 import '../../widgets/loading_overlay.dart';
+import '../../models/user_model.dart';
 
-/// Login screen with email/password form and mock authentication.
-///
-/// No sign-up option — officers are pre-registered in the system.
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
 
@@ -20,9 +18,10 @@ class LoginScreen extends StatefulWidget {
 class _LoginScreenState extends State<LoginScreen>
     with SingleTickerProviderStateMixin {
   final _formKey = GlobalKey<FormState>();
-  final _emailController = TextEditingController();
+  final _usernameController = TextEditingController();
   final _passwordController = TextEditingController();
   bool _obscurePassword = true;
+  bool _showOfficerLogin = false;
 
   late AnimationController _animController;
   late Animation<double> _fadeAnim;
@@ -50,22 +49,32 @@ class _LoginScreenState extends State<LoginScreen>
   @override
   void dispose() {
     _animController.dispose();
-    _emailController.dispose();
+    _usernameController.dispose();
     _passwordController.dispose();
     super.dispose();
   }
 
-  Future<void> _handleLogin() async {
+  Future<void> _handleOfficerLogin() async {
     if (!_formKey.currentState!.validate()) return;
 
     final authService = context.read<AuthService>();
     final response = await authService.login(
       LoginRequest(
-        email: _emailController.text.trim(),
+        email: _usernameController.text.trim(),
         password: _passwordController.text,
       ),
     );
 
+    _handleResponse(response);
+  }
+
+  Future<void> _handleGoogleLogin(String email, String sub, String name) async {
+    final authService = context.read<AuthService>();
+    final response = await authService.googleLogin(email, sub, name);
+    _handleResponse(response);
+  }
+
+  void _handleResponse(response) {
     if (!mounted) return;
 
     if (response.success) {
@@ -76,12 +85,58 @@ class _LoginScreenState extends State<LoginScreen>
           content: Text(response.error ?? 'Login failed'),
           backgroundColor: Theme.of(context).colorScheme.error,
           behavior: SnackBarBehavior.floating,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(10),
-          ),
         ),
       );
     }
+  }
+
+  void _autofillDemoOfficer() {
+    setState(() {
+      _showOfficerLogin = true;
+      _usernameController.text = 'demo_officer';
+      _passwordController.text = 'password123';
+    });
+    // According to instructions, autofill only, user must click login.
+  }
+
+  void _autofillDemoSupervisor() {
+    // For Google mock, we can just trigger it since there is no form field for it normally.
+    _handleGoogleLogin('demo.supervisor@gmail.com', 'demo_google_sup_123', 'Demo Supervisor');
+  }
+
+  void _autofillDemoUser() {
+    _handleGoogleLogin('demo.user1@gmail.com', 'demo_google_user_1', 'Demo User 1');
+  }
+
+  void _showMockGoogleDialog() {
+    final emailController = TextEditingController();
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text("Mock Google Login"),
+        content: TextField(
+          controller: emailController,
+          decoration: const InputDecoration(hintText: "Enter Gmail address"),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text("Cancel"),
+          ),
+          FilledButton(
+            onPressed: () {
+              final email = emailController.text.trim();
+              if (email.isNotEmpty) {
+                Navigator.pop(context);
+                // Create a mock sub based on email to make it deterministic
+                _handleGoogleLogin(email, 'mock_sub_$email', 'Mock User');
+              }
+            },
+            child: const Text("Sign In"),
+          ),
+        ],
+      ),
+    );
   }
 
   @override
@@ -106,33 +161,11 @@ class _LoginScreenState extends State<LoginScreen>
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        // Logo
-                        Container(
-                          width: 72,
-                          height: 72,
-                          decoration: BoxDecoration(
-                            gradient: const LinearGradient(
-                              colors: [
-                                Color(0xFF00BFA6),
-                                Color(0xFF00897B),
-                              ],
-                            ),
-                            borderRadius: BorderRadius.circular(20),
-                            boxShadow: [
-                              BoxShadow(
-                                color:
-                                    const Color(0xFF00BFA6).withAlpha(40),
-                                blurRadius: 20,
-                              ),
-                            ],
-                          ),
-                          child: const Icon(
-                            Icons.verified_user_rounded,
-                            size: 36,
-                            color: Colors.white,
-                          ),
+                        const Icon(
+                          Icons.security,
+                          size: 72,
+                          color: Color(0xFF00BFA6),
                         ),
-
                         const SizedBox(height: 24),
                         Text(
                           'GeoEvidence',
@@ -140,140 +173,115 @@ class _LoginScreenState extends State<LoginScreen>
                             fontWeight: FontWeight.w700,
                           ),
                         ),
-                        const SizedBox(height: 4),
-                        Text(
-                          'Authorized Personnel Only',
-                          style: theme.textTheme.bodySmall?.copyWith(
-                            color: const Color(0xFF00BFA6),
-                            letterSpacing: 1.2,
-                          ),
-                        ),
-
                         const SizedBox(height: 40),
 
-                        // Login form
-                        Form(
-                          key: _formKey,
-                          child: Column(
-                            children: [
-                              // Email field
-                              TextFormField(
-                                controller: _emailController,
-                                keyboardType: TextInputType.emailAddress,
-                                style: theme.textTheme.bodyLarge,
-                                decoration: InputDecoration(
-                                  hintText: 'Email address',
-                                  prefixIcon: Icon(
-                                    Icons.email_outlined,
-                                    color: theme.colorScheme.primary,
-                                  ),
-                                ),
-                                validator: (value) {
-                                  if (value == null || value.isEmpty) {
-                                    return 'Please enter your email';
-                                  }
-                                  if (!value.contains('@')) {
-                                    return 'Please enter a valid email';
-                                  }
-                                  return null;
-                                },
-                              ),
-
-                              const SizedBox(height: 16),
-
-                              // Password field
-                              TextFormField(
-                                controller: _passwordController,
-                                obscureText: _obscurePassword,
-                                style: theme.textTheme.bodyLarge,
-                                decoration: InputDecoration(
-                                  hintText: 'Password',
-                                  prefixIcon: Icon(
-                                    Icons.lock_outline_rounded,
-                                    color: theme.colorScheme.primary,
-                                  ),
-                                  suffixIcon: IconButton(
-                                    icon: Icon(
-                                      _obscurePassword
-                                          ? Icons.visibility_off_rounded
-                                          : Icons.visibility_rounded,
-                                      color: const Color(0xFF6B7A8D),
-                                    ),
-                                    onPressed: () {
-                                      setState(() {
-                                        _obscurePassword = !_obscurePassword;
-                                      });
-                                    },
-                                  ),
-                                ),
-                                validator: (value) {
-                                  if (value == null || value.isEmpty) {
-                                    return 'Please enter your password';
-                                  }
-                                  if (value.length < 6) {
-                                    return 'Password must be at least 6 characters';
-                                  }
-                                  return null;
-                                },
-                              ),
-
-                              const SizedBox(height: 28),
-
-                              // Login button
-                              SizedBox(
-                                width: double.infinity,
-                                height: 54,
-                                child: ElevatedButton(
-                                  onPressed: _handleLogin,
-                                  child: const Text('Sign In'),
-                                ),
-                              ),
-                            ],
+                        // Google Sign In Button
+                        SizedBox(
+                          width: double.infinity,
+                          height: 56,
+                          child: FilledButton.icon(
+                            onPressed: _showMockGoogleDialog,
+                            icon: const Icon(Icons.g_mobiledata, size: 32),
+                            label: const Text('Continue with Google'),
+                            style: FilledButton.styleFrom(
+                              backgroundColor: Colors.white,
+                              foregroundColor: Colors.black87,
+                            ),
                           ),
                         ),
 
-                        const SizedBox(height: 32),
-
-                        // Dev hint
-                        Container(
-                          padding: const EdgeInsets.all(14),
-                          decoration: BoxDecoration(
-                            color: const Color(0xFF1A2940).withAlpha(180),
-                            borderRadius: BorderRadius.circular(12),
-                            border: Border.all(
-                              color: const Color(0xFF3D8BFF).withAlpha(40),
-                            ),
+                        const SizedBox(height: 24),
+                        TextButton(
+                          onPressed: () {
+                            setState(() {
+                              _showOfficerLogin = !_showOfficerLogin;
+                            });
+                          },
+                          child: Text(
+                            _showOfficerLogin ? 'Hide Officer Login' : 'Officer Login',
+                            style: const TextStyle(color: Colors.white70),
                           ),
-                          child: Column(
-                            children: [
-                              Row(
-                                children: [
-                                  Icon(
-                                    Icons.info_outline_rounded,
-                                    size: 16,
-                                    color: theme.colorScheme.secondary,
-                                  ),
-                                  const SizedBox(width: 8),
-                                  Text(
-                                    'Dev Mode Credentials',
-                                    style: theme.textTheme.bodySmall
-                                        ?.copyWith(
-                                      color: theme.colorScheme.secondary,
-                                      fontWeight: FontWeight.w600,
+                        ),
+
+                        if (_showOfficerLogin) ...[
+                          const SizedBox(height: 16),
+                          Form(
+                            key: _formKey,
+                            child: Column(
+                              children: [
+                                TextFormField(
+                                  controller: _usernameController,
+                                  style: theme.textTheme.bodyLarge,
+                                  decoration: InputDecoration(
+                                    hintText: 'Username',
+                                    prefixIcon: Icon(
+                                      Icons.person,
+                                      color: theme.colorScheme.primary,
                                     ),
                                   ),
-                                ],
-                              ),
-                              const SizedBox(height: 8),
-                              Text(
-                                'officer@geotag.com / password123\nsupervisor@geotag.com / password123',
-                                style: theme.textTheme.bodySmall?.copyWith(
-                                  fontFamily: 'monospace',
-                                  fontSize: 11,
+                                  validator: (value) => value == null || value.isEmpty ? 'Required' : null,
                                 ),
-                              ),
-                            ],
+                                const SizedBox(height: 16),
+                                TextFormField(
+                                  controller: _passwordController,
+                                  obscureText: _obscurePassword,
+                                  style: theme.textTheme.bodyLarge,
+                                  decoration: InputDecoration(
+                                    hintText: 'Password',
+                                    prefixIcon: Icon(
+                                      Icons.lock,
+                                      color: theme.colorScheme.primary,
+                                    ),
+                                    suffixIcon: IconButton(
+                                      icon: Icon(_obscurePassword ? Icons.visibility_off : Icons.visibility),
+                                      onPressed: () => setState(() => _obscurePassword = !_obscurePassword),
+                                    ),
+                                  ),
+                                  validator: (value) => value == null || value.isEmpty ? 'Required' : null,
+                                ),
+                                const SizedBox(height: 24),
+                                SizedBox(
+                                  width: double.infinity,
+                                  height: 56,
+                                  child: FilledButton(
+                                    onPressed: _handleOfficerLogin,
+                                    child: const Text('Sign In as Officer'),
+                                  ),
+                                ),
+                              ],
+                            ),
                           ),
+                        ],
+
+                        const SizedBox(height: 48),
+                        const Divider(color: Colors.white24),
+                        const SizedBox(height: 16),
+                        const Text('DEMO ACCOUNTS', style: TextStyle(color: Colors.white54, fontSize: 12)),
+                        const SizedBox(height: 8),
+                        Wrap(
+                          spacing: 8,
+                          runSpacing: 8,
+                          alignment: WrapAlignment.center,
+                          children: [
+                            ActionChip(
+                              label: const Text('Demo Officer'),
+                              onPressed: _autofillDemoOfficer,
+                              backgroundColor: Colors.white10,
+                              labelStyle: const TextStyle(color: Colors.white),
+                            ),
+                            ActionChip(
+                              label: const Text('Demo Supervisor'),
+                              onPressed: _autofillDemoSupervisor,
+                              backgroundColor: Colors.white10,
+                              labelStyle: const TextStyle(color: Colors.white),
+                            ),
+                            ActionChip(
+                              label: const Text('Demo User'),
+                              onPressed: _autofillDemoUser,
+                              backgroundColor: Colors.white10,
+                              labelStyle: const TextStyle(color: Colors.white),
+                            ),
+                          ],
                         ),
                       ],
                     ),

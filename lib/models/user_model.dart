@@ -2,61 +2,62 @@
 enum UserRole {
   officer,
   supervisor,
-  admin,
+  user,
 }
 
-/// Authenticated user model.
+/// Authenticated user model matching FastAPI UserResponse.
 class UserModel {
   final String userId;
-  final String name;
-  final String email;
+  final String? name;
+  final String? email;
+  final String? username;
   final UserRole role;
-  final String badgeNumber;
-  final String? avatarUrl;
+  final String? department;
+  final String? profileImage;
+  final bool isActive;
 
   const UserModel({
     required this.userId,
-    required this.name,
-    required this.email,
+    this.name,
+    this.email,
+    this.username,
     required this.role,
-    required this.badgeNumber,
-    this.avatarUrl,
+    this.department,
+    this.profileImage,
+    required this.isActive,
   });
 
   factory UserModel.fromJson(Map<String, dynamic> json) {
     return UserModel(
-      userId: json['user_id'] as String,
-      name: json['name'] as String,
-      email: json['email'] as String,
-      role: UserRole.values.firstWhere(
-        (r) => r.name == json['role'],
-        orElse: () => UserRole.officer,
-      ),
-      badgeNumber: json['badge_number'] as String,
-      avatarUrl: json['avatar_url'] as String?,
+      userId: json['id'] as String,
+      name: json['name'] as String?,
+      email: json['email'] as String?,
+      username: json['username'] as String?,
+      role: _parseRole(json['role'] as String?),
+      department: json['department'] as String?,
+      profileImage: json['profile_image'] as String?,
+      isActive: json['is_active'] as bool? ?? true,
     );
+  }
+
+  static UserRole _parseRole(String? roleStr) {
+    if (roleStr == null) return UserRole.user;
+    final r = roleStr.toLowerCase();
+    if (r == 'officer') return UserRole.officer;
+    if (r == 'supervisor') return UserRole.supervisor;
+    return UserRole.user;
   }
 
   Map<String, dynamic> toJson() {
     return {
-      'user_id': userId,
+      'id': userId,
       'name': name,
       'email': email,
-      'role': role.name,
-      'badge_number': badgeNumber,
-      'avatar_url': avatarUrl,
+      'username': username,
+      'role': role.name.toUpperCase(),
+      'department': department,
+      'profile_image': profileImage,
+      'is_active': isActive,
     };
-  }
-
-  /// Display-friendly role label.
-  String get roleLabel {
-    switch (role) {
-      case UserRole.officer:
-        return 'Field Officer';
-      case UserRole.supervisor:
-        return 'Supervisor';
-      case UserRole.admin:
-        return 'Administrator';
-    }
   }
 }
