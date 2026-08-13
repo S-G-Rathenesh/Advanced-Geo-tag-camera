@@ -5,6 +5,7 @@ import '../../core/constants/app_constants.dart';
 import '../../core/constants/app_routes.dart';
 import '../../core/constants/app_theme.dart';
 import '../../services/auth_service.dart';
+import '../../widgets/app_bottom_nav_bar.dart';
 import '../../widgets/gradient_background.dart';
 import '../../widgets/secure_app_bar.dart';
 
@@ -41,7 +42,7 @@ class ProfileScreen extends StatelessWidget {
                 ),
                 child: Center(
                   child: Text(
-                    user?.name.substring(0, 1).toUpperCase() ?? '?',
+                    (user?.name?.isNotEmpty == true) ? user!.name!.substring(0, 1).toUpperCase() : '?',
                     style: const TextStyle(
                       color: Colors.white,
                       fontSize: 32,
@@ -66,7 +67,7 @@ class ProfileScreen extends StatelessWidget {
                   borderRadius: BorderRadius.circular(20),
                 ),
                 child: Text(
-                  user?.roleLabel ?? 'Unknown Role',
+                  user?.role.name.toUpperCase() ?? 'Unknown Role',
                   style: const TextStyle(
                     color: Color(0xFF00BFA6),
                     fontSize: 12,
@@ -86,8 +87,8 @@ class ProfileScreen extends StatelessWidget {
               const SizedBox(height: 10),
               _ProfileInfoCard(
                 icon: Icons.badge_outlined,
-                label: 'Badge Number',
-                value: user?.badgeNumber ?? 'N/A',
+                label: 'Department',
+                value: user?.department ?? 'N/A',
               ),
               const SizedBox(height: 10),
               _ProfileInfoCard(
@@ -159,6 +160,7 @@ class ProfileScreen extends StatelessWidget {
           ),
         ),
       ),
+      bottomNavigationBar: const AppBottomNavBar(currentIndex: 3),
     );
   }
 

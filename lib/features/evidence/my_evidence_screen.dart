@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 
 import '../../core/constants/app_routes.dart';
 import '../../services/evidence_service.dart';
+import '../../widgets/app_bottom_nav_bar.dart';
 import '../../widgets/evidence_card.dart';
 import '../../widgets/gradient_background.dart';
 import '../../widgets/secure_app_bar.dart';
@@ -66,6 +67,7 @@ class _MyEvidenceScreenState extends State<MyEvidenceScreen> {
             Navigator.pushNamed(context, AppRoutes.secureCamera),
         child: const Icon(Icons.camera_alt_rounded),
       ),
+      bottomNavigationBar: const AppBottomNavBar(currentIndex: 2),
     );
   }
 

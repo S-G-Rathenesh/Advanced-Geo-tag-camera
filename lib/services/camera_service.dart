@@ -111,7 +111,7 @@ class CameraService {
   Future<void> toggleFlash() async {
     if (_controller == null) return;
 
-    final modes = [FlashMode.off, FlashMode.auto, FlashMode.always];
+    final modes = [FlashMode.off, FlashMode.auto, FlashMode.torch];
     int currentIndex = modes.indexOf(_controller!.value.flashMode);
     
     // Try setting the next modes until one succeeds

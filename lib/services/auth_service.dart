@@ -28,6 +28,24 @@ class AuthService extends ChangeNotifier {
     _error = null;
     notifyListeners();
 
+    // --- DEMO FALLBACK FOR OFFLINE / PHYSICAL DEVICE TESTING ---
+    if (request.email == 'demo_officer' && request.password == 'password123') {
+      await Future.delayed(const Duration(seconds: 1));
+      _currentUser = const UserModel(
+        userId: 'officer_123',
+        name: 'James Chen',
+        email: 'james.chen@geoevidence.com',
+        role: UserRole.officer,
+        department: 'GE-2024-0451',
+        isActive: true,
+      );
+      final token = 'mock_officer_token';
+      await _secureStorage.saveToken(token);
+      _isLoading = false;
+      notifyListeners();
+      return LoginResponse(success: true, token: token, user: _currentUser);
+    }
+
     try {
       final url = Uri.parse('${AppConstants.apiBaseUrl}/auth/officer/login');
       final response = await http.post(
@@ -68,6 +86,31 @@ class AuthService extends ChangeNotifier {
     _isLoading = true;
     _error = null;
     notifyListeners();
+
+    // --- DEMO FALLBACK FOR OFFLINE / PHYSICAL DEVICE TESTING ---
+    if (mockEmail.startsWith('demo.')) {
+      await Future.delayed(const Duration(seconds: 1));
+      UserRole role = UserRole.user;
+      String dept = 'General';
+      if (mockEmail.contains('supervisor')) {
+        role = UserRole.supervisor;
+        dept = 'HQ Admin';
+      }
+      
+      _currentUser = UserModel(
+        userId: mockSub,
+        name: mockName,
+        email: mockEmail,
+        role: role,
+        department: dept,
+        isActive: true,
+      );
+      final token = 'mock_google_token_$mockSub';
+      await _secureStorage.saveToken(token);
+      _isLoading = false;
+      notifyListeners();
+      return LoginResponse(success: true, token: token, user: _currentUser);
+    }
 
     try {
       // Create a mock JWT to simulate a Google Identity token

@@ -7,6 +7,7 @@ import '../../core/constants/app_theme.dart';
 import '../../services/auth_service.dart';
 import '../../services/evidence_service.dart';
 import '../../services/sync_service.dart';
+import '../../widgets/app_bottom_nav_bar.dart';
 import '../../widgets/gradient_background.dart';
 
 /// Officer home screen with quick stats and action cards.
@@ -74,8 +75,7 @@ class _OfficerDashboardState extends State<OfficerDashboard>
                           ),
                           child: Center(
                             child: Text(
-                              user?.name.substring(0, 1).toUpperCase() ??
-                                  'O',
+                              (user?.name?.isNotEmpty == true) ? user!.name!.substring(0, 1).toUpperCase() : 'O',
                               style: const TextStyle(
                                 color: Colors.white,
                                 fontSize: 20,
@@ -251,43 +251,7 @@ class _OfficerDashboardState extends State<OfficerDashboard>
           ),
         ),
       ),
-      bottomNavigationBar: BottomNavigationBar(
-        currentIndex: _currentIndex,
-        onTap: (index) {
-          setState(() => _currentIndex = index);
-          switch (index) {
-            case 0:
-              break; // Already on dashboard
-            case 1:
-              Navigator.pushNamed(context, AppRoutes.secureCamera);
-              break;
-            case 2:
-              Navigator.pushNamed(context, AppRoutes.myEvidence);
-              break;
-            case 3:
-              Navigator.pushNamed(context, AppRoutes.profile);
-              break;
-          }
-        },
-        items: const [
-          BottomNavigationBarItem(
-            icon: Icon(Icons.dashboard_rounded),
-            label: 'Home',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.camera_alt_rounded),
-            label: 'Capture',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.folder_rounded),
-            label: 'Evidence',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.person_rounded),
-            label: 'Profile',
-          ),
-        ],
-      ),
+      bottomNavigationBar: const AppBottomNavBar(currentIndex: 0),
     );
   }
 }
@@ -403,6 +367,8 @@ class _ActionCard extends StatelessWidget {
               const SizedBox(height: 2),
               Text(
                 subtitle,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
                 style: const TextStyle(
                   color: Color(0xFF6B7A8D),
                   fontSize: 12,

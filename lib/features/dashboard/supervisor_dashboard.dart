@@ -74,8 +74,7 @@ class _SupervisorDashboardState extends State<SupervisorDashboard>
                           ),
                           child: Center(
                             child: Text(
-                              user?.name.substring(0, 1).toUpperCase() ??
-                                  'O',
+                              (user?.name?.isNotEmpty == true) ? user!.name!.substring(0, 1).toUpperCase() : 'S',
                               style: const TextStyle(
                                 color: Colors.white,
                                 fontSize: 20,

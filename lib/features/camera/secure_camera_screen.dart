@@ -136,12 +136,11 @@ class _SecureCameraScreenState extends State<SecureCameraScreen>
       backgroundColor: Colors.black,
       body: Stack(
         children: [
-          // Camera preview – full screen
+          // Camera preview
           Positioned.fill(
-            child: FittedBox(
-              fit: BoxFit.cover,
-              child: SizedBox(
-                width: 100, // Arbitrary base width, aspect ratio dictates height
+            child: Center(
+              child: AspectRatio(
+                aspectRatio: 1 / _cameraService.controller!.value.aspectRatio,
                 child: CameraPreview(_cameraService.controller!),
               ),
             ),
