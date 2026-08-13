@@ -1,3 +1,6 @@
+import 'dart:io' show Platform;
+import 'package:flutter/foundation.dart' show kIsWeb;
+
 /// App-wide constants for the Geo Evidence application.
 ///
 /// All configurable thresholds and identifiers are centralized here
@@ -5,15 +8,25 @@
 class AppConstants {
   AppConstants._();
 
-  // ── App Identity ──────────────────────────────────────────────────────
+  // 🛡️ App Identity 🛡️🛡️🛡️🛡️🛡️🛡️🛡️🛡️🛡️🛡️🛡️🛡️🛡️🛡️🛡️🛡️🛡️🛡️🛡️🛡️🛡️🛡️🛡️🛡️🛡️🛡️🛡️🛡️🛡️🛡️🛡️🛡️🛡️🛡️🛡️🛡️🛡️🛡️🛡️🛡️🛡️🛡️🛡️🛡️🛡️🛡️🛡️🛡️🛡️🛡️
   static const String appName = 'GeoEvidence';
   static const String appVersion = '1.0.0';
   static const String appTagline = 'Secure Field Evidence Capture';
 
-  // ── API Configuration ─────────────────────────────────────────────────
+  // 🌐 API Configuration 🌐🌐🌐🌐🌐🌐🌐🌐🌐🌐🌐🌐🌐🌐🌐🌐🌐🌐🌐🌐🌐🌐🌐🌐🌐🌐🌐🌐🌐🌐🌐🌐🌐🌐🌐🌐🌐🌐🌐🌐🌐🌐🌐🌐🌐🌐
   /// Base URL placeholder – replaced when FastAPI backend is integrated.
   /// 10.0.2.2 is the localhost loopback for the Android emulator.
-  static const String apiBaseUrl = 'http://10.0.2.2:8000/api/v1';
+  static String get apiBaseUrl {
+    if (kIsWeb) {
+      return 'http://127.0.0.1:8000/api/v1';
+    }
+    try {
+      if (Platform.isAndroid) {
+        return 'http://10.0.2.2:8000/api/v1';
+      }
+    } catch (_) {}
+    return 'http://127.0.0.1:8000/api/v1';
+  }
   static const Duration apiTimeout = Duration(seconds: 30);
 
   // ── GPS / Location ────────────────────────────────────────────────────
