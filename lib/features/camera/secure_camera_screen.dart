@@ -138,7 +138,13 @@ class _SecureCameraScreenState extends State<SecureCameraScreen>
         children: [
           // Camera preview – full screen
           Positioned.fill(
-            child: CameraPreview(_cameraService.controller!),
+            child: FittedBox(
+              fit: BoxFit.cover,
+              child: SizedBox(
+                width: 100, // Arbitrary base width, aspect ratio dictates height
+                child: CameraPreview(_cameraService.controller!),
+              ),
+            ),
           ),
 
           // Top bar with close and flash
