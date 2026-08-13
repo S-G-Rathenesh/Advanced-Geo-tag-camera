@@ -45,9 +45,14 @@ class _CaptureConfirmationScreenState
   }
 
   Future<void> _loadMetadata() async {
+    setState(() {
+      _isLoadingLocation = true;
+      _locationError = null;
+    });
+
     // Get location
     try {
-      _position = await _locationService.getValidatedPosition();
+      _position = await _locationService.getCurrentPosition();
     } catch (e) {
       _locationError = e.toString();
     }
@@ -257,6 +262,11 @@ class _CaptureConfirmationScreenState
                                             ),
                                           ),
                                         ),
+                                        IconButton(
+                                          icon: const Icon(Icons.refresh_rounded, color: Colors.white70, size: 18),
+                                          onPressed: _loadMetadata,
+                                          tooltip: 'Retry GPS',
+                                        ),
                                       ],
                                     ),
                                   )
@@ -291,6 +301,32 @@ class _CaptureConfirmationScreenState
                                             ? AppTheme.statusSynced
                                             : AppTheme.statusPending,
                                   ),
+                                  if (!_locationService.meetsAccuracyThreshold(_position!))
+                                    Container(
+                                      margin: const EdgeInsets.only(top: 8, bottom: 8),
+                                      padding: const EdgeInsets.all(8),
+                                      decoration: BoxDecoration(
+                                        color: AppTheme.statusPending.withAlpha(25),
+                                        borderRadius: BorderRadius.circular(8),
+                                        border: Border.all(color: AppTheme.statusPending.withAlpha(60)),
+                                      ),
+                                      child: Row(
+                                        children: [
+                                          Icon(Icons.gps_not_fixed_rounded, color: AppTheme.statusPending, size: 16),
+                                          const SizedBox(width: 8),
+                                          Expanded(
+                                            child: Text(
+                                              'Accuracy ±${_position!.accuracy.toStringAsFixed(1)}m exceeds ±${AppConstants.gpsAccuracyThresholdMetres.toStringAsFixed(1)}m threshold.',
+                                              style: TextStyle(color: AppTheme.statusPending, fontSize: 11),
+                                            ),
+                                          ),
+                                          TextButton(
+                                            onPressed: _loadMetadata,
+                                            child: const Text('Retry GPS', style: TextStyle(fontSize: 11, color: Colors.white)),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
                                 ],
                                 _MetadataRow(
                                   icon: Icons.access_time_rounded,

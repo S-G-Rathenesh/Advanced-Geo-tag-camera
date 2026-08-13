@@ -43,15 +43,34 @@ class LocationHelper {
       throw LocationServiceDisabledException();
     }
 
-    final hasPermission = await requestPermission();
-    if (!hasPermission) {
+    LocationPermission permission = await Geolocator.checkPermission();
+    if (permission == LocationPermission.denied) {
+      permission = await Geolocator.requestPermission();
+    }
+
+    if (permission == LocationPermission.deniedForever) {
+      throw PermissionDeniedException(
+        'Location permission is permanently denied. Please enable it in App Settings.',
+      );
+    }
+
+    if (permission != LocationPermission.always &&
+        permission != LocationPermission.whileInUse) {
       throw PermissionDeniedException('Location permission denied');
     }
 
-    return Geolocator.getCurrentPosition(
-      desiredAccuracy: LocationAccuracy.high,
-      timeLimit: AppConstants.locationTimeout,
-    );
+    try {
+      return await Geolocator.getCurrentPosition(
+        desiredAccuracy: LocationAccuracy.high,
+        timeLimit: AppConstants.locationTimeout,
+      );
+    } catch (e) {
+      final lastKnown = await Geolocator.getLastKnownPosition();
+      if (lastKnown != null) {
+        return lastKnown;
+      }
+      rethrow;
+    }
   }
 
   /// Returns `true` if the [position]'s accuracy is within the

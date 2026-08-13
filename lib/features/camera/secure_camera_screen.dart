@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 
 import '../../core/constants/app_routes.dart';
 import '../../services/camera_service.dart';
+import '../../services/location_service.dart';
 
 /// Full-screen camera for evidence capture.
 ///
@@ -19,6 +20,7 @@ class SecureCameraScreen extends StatefulWidget {
 class _SecureCameraScreenState extends State<SecureCameraScreen>
     with WidgetsBindingObserver {
   final CameraService _cameraService = CameraService();
+  final LocationService _locationService = LocationService();
   bool _isCapturing = false;
   String? _error;
 
@@ -27,6 +29,9 @@ class _SecureCameraScreenState extends State<SecureCameraScreen>
     super.initState();
     WidgetsBinding.instance.addObserver(this);
     _initCamera();
+    if (!kIsWeb) {
+      _locationService.getCurrentPosition().then((_) {}, onError: (_) {});
+    }
   }
 
   @override
