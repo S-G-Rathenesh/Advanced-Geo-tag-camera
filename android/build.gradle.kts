@@ -17,6 +17,11 @@ subprojects {
 }
 subprojects {
     project.evaluationDependsOn(":app")
+    project.plugins.withId("com.android.library") {
+        dependencies {
+            add("compileOnly", "androidx.concurrent:concurrent-futures:1.2.0")
+        }
+    }
 }
 
 tasks.register<Delete>("clean") {
