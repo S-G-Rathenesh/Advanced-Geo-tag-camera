@@ -1,15 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:intl/intl.dart';
 
 import '../../core/constants/app_routes.dart';
-import '../../core/constants/app_theme.dart';
 import '../../services/auth_service.dart';
 import '../../services/evidence_service.dart';
-import '../../services/sync_service.dart';
 import '../../widgets/gradient_background.dart';
+import '../profile/profile_screen.dart';
+import '../evidence/cloud_evidence_screen.dart';
+import '../synchronization/sync_status_screen.dart';
+import '../../models/sync_status.dart';
 
-/// Officer home screen with quick stats and action cards.
 class UserDashboard extends StatefulWidget {
   const UserDashboard({super.key});
 
@@ -17,325 +17,126 @@ class UserDashboard extends StatefulWidget {
   State<UserDashboard> createState() => _UserDashboardState();
 }
 
-class _UserDashboardState extends State<UserDashboard>
-    with SingleTickerProviderStateMixin {
-  final int _currentIndex = 0;
-  late AnimationController _animController;
+class _UserDashboardState extends State<UserDashboard> {
+  int _currentIndex = 0;
 
-  @override
-  void initState() {
-    super.initState();
-    _animController = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 600),
-    )..forward();
-
-    // Load evidence data
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      context.read<EvidenceService>().loadEvidence();
+  void _onTabTapped(int index) {
+    if (index == 1) {
+      // Capture button
+      Navigator.pushNamed(context, AppRoutes.secureCamera);
+      return;
+    }
+    setState(() {
+      _currentIndex = index;
     });
-  }
-
-  @override
-  void dispose() {
-    _animController.dispose();
-    super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final authService = context.watch<AuthService>();
+    final user = context.watch<AuthService>().currentUser;
     final evidenceService = context.watch<EvidenceService>();
-    final syncService = context.watch<SyncService>();
-    final user = authService.currentUser;
+
+    final List<Widget> pages = [
+      // 0: Home (Dashboard Summary)
+      _buildHomeSummary(theme, user, evidenceService),
+      // 1: Placeholder for Capture
+      const SizedBox.shrink(),
+      // 2: My Evidence (Cloud)
+      CloudEvidenceScreen(title: 'My Evidence', userId: user?.userId, showBottomNav: true),
+      // 3: Sync Status (Offline Queue)
+      const SyncStatusScreen(),
+      // 4: Profile
+      const ProfileScreen(showBottomNav: true),
+    ];
 
     return Scaffold(
-      body: GradientBackground(
-        addOverlay: true,
-        child: SafeArea(
-          child: FadeTransition(
-            opacity: _animController,
-            child: CustomScrollView(
-              slivers: [
-                // Welcome header
-                SliverToBoxAdapter(
-                  child: Padding(
-                    padding: const EdgeInsets.fromLTRB(20, 20, 20, 8),
-                    child: Row(
-                      children: [
-                        // Avatar
-                        Container(
-                          width: 48,
-                          height: 48,
-                          decoration: BoxDecoration(
-                            gradient: AppTheme.accentGradient,
-                            borderRadius: BorderRadius.circular(14),
-                          ),
-                          child: Center(
-                            child: Text(
-                              (user?.name?.isNotEmpty == true) ? user!.name!.substring(0, 1).toUpperCase() : 'U',
-                              style: const TextStyle(
-                                color: Colors.white,
-                                fontSize: 20,
-                                fontWeight: FontWeight.w700,
-                              ),
-                            ),
-                          ),
-                        ),
-                        const SizedBox(width: 14),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                'Welcome back,',
-                                style: theme.textTheme.bodySmall,
-                              ),
-                              Text(
-                                user?.name ?? 'Officer',
-                                style: theme.textTheme.titleLarge,
-                              ),
-                            ],
-                          ),
-                        ),
-                        // Badge
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 10,
-                            vertical: 6,
-                          ),
-                          decoration: BoxDecoration(
-                            color: const Color(0xFF00BFA6).withAlpha(20),
-                            borderRadius: BorderRadius.circular(8),
-                            border: Border.all(
-                              color: const Color(0xFF00BFA6).withAlpha(50),
-                            ),
-                          ),
-                          child: Text(
-                            user?.department ?? 'USER',
-                            style: theme.textTheme.bodySmall?.copyWith(
-                              color: const Color(0xFF00BFA6),
-                              fontWeight: FontWeight.w600,
-                              fontSize: 11,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-
-                // Stats row
-                SliverToBoxAdapter(
-                  child: Padding(
-                    padding: const EdgeInsets.fromLTRB(20, 16, 20, 8),
-                    child: Row(
-                      children: [
-                        _StatTile(
-                          label: 'Total',
-                          value: '${evidenceService.evidenceList.length}',
-                          icon: Icons.photo_camera_rounded,
-                          color: const Color(0xFF3D8BFF),
-                        ),
-                        const SizedBox(width: 12),
-                        _StatTile(
-                          label: 'Pending',
-                          value: '${evidenceService.pendingCount}',
-                          icon: Icons.schedule_rounded,
-                          color: AppTheme.statusPending,
-                        ),
-                        const SizedBox(width: 12),
-                        _StatTile(
-                          label: 'Synced',
-                          value: '${evidenceService.syncedCount}',
-                          icon: Icons.cloud_done_rounded,
-                          color: AppTheme.statusSynced,
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-
-                // Last sync indicator
-                if (syncService.lastSyncTime != null)
-                  SliverToBoxAdapter(
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 20, vertical: 4),
-                      child: Row(
-                        children: [
-                          Icon(
-                            Icons.sync_rounded,
-                            size: 14,
-                            color: theme.colorScheme.primary,
-                          ),
-                          const SizedBox(width: 6),
-                          Text(
-                            'Last sync: ${DateFormat('HH:mm').format(syncService.lastSyncTime!)}',
-                            style: theme.textTheme.bodySmall,
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-
-                // Action cards
-                SliverToBoxAdapter(
-                  child: Padding(
-                    padding: const EdgeInsets.fromLTRB(20, 24, 20, 8),
-                    child: Text(
-                      'Quick Actions',
-                      style: theme.textTheme.titleMedium,
-                    ),
-                  ),
-                ),
-
-                SliverPadding(
-                  padding: const EdgeInsets.symmetric(horizontal: 20),
-                  sliver: SliverGrid(
-                    gridDelegate:
-                        const SliverGridDelegateWithFixedCrossAxisCount(
-                      crossAxisCount: 2,
-                      mainAxisSpacing: 12,
-                      crossAxisSpacing: 12,
-                      childAspectRatio: 1.15,
-                    ),
-                    delegate: SliverChildListDelegate([
-                      _ActionCard(
-                        icon: Icons.camera_alt_rounded,
-                        title: 'New Capture',
-                        subtitle: 'Take evidence photo',
-                        gradient: AppTheme.accentGradient,
-                        onTap: () => Navigator.pushNamed(
-                            context, AppRoutes.secureCamera),
-                      ),
-                      _ActionCard(
-                        icon: Icons.folder_rounded,
-                        title: 'My Evidence',
-                        subtitle: 'View captured records',
-                        gradient: const LinearGradient(
-                          colors: [Color(0xFF3D8BFF), Color(0xFF1565C0)],
-                        ),
-                        onTap: () => Navigator.pushNamed(
-                            context, AppRoutes.myEvidence),
-                      ),
-                      _ActionCard(
-                        icon: Icons.sync_rounded,
-                        title: 'Sync Status',
-                        subtitle: 'Upload queue',
-                        gradient: const LinearGradient(
-                          colors: [Color(0xFFFFAB00), Color(0xFFFF8F00)],
-                        ),
-                        onTap: () => Navigator.pushNamed(
-                            context, AppRoutes.syncStatus),
-                      ),
-                      _ActionCard(
-                        icon: Icons.person_rounded,
-                        title: 'Profile',
-                        subtitle: 'Account & settings',
-                        gradient: const LinearGradient(
-                          colors: [Color(0xFF7C4DFF), Color(0xFF651FFF)],
-                        ),
-                        onTap: () =>
-                            Navigator.pushNamed(context, AppRoutes.profile),
-                      ),
-                    ]),
-                  ),
-                ),
-
-                const SliverToBoxAdapter(child: SizedBox(height: 24)),
-              ],
-            ),
-          ),
-        ),
+      body: IndexedStack(
+        index: _currentIndex,
+        children: pages,
       ),
       bottomNavigationBar: BottomNavigationBar(
-        type: BottomNavigationBarType.fixed,
         currentIndex: _currentIndex,
-        onTap: (index) {
-          switch (index) {
-            case 0:
-              break; // Already on dashboard
-            case 1:
-              Navigator.pushNamed(context, AppRoutes.secureCamera);
-              break;
-            case 2:
-              Navigator.pushNamed(context, AppRoutes.myEvidence);
-              break;
-            case 3:
-              Navigator.pushNamed(context, AppRoutes.profile);
-              break;
-          }
-        },
+        onTap: _onTabTapped,
+        backgroundColor: const Color(0xFF0F172A),
+        selectedItemColor: const Color(0xFF00BFA6),
+        unselectedItemColor: Colors.white54,
+        type: BottomNavigationBarType.fixed,
         items: const [
-          BottomNavigationBarItem(
-            icon: Icon(Icons.dashboard_rounded),
-            label: 'Home',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.camera_alt_rounded),
-            label: 'Capture',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.folder_rounded),
-            label: 'Evidence',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.person_rounded),
-            label: 'Profile',
-          ),
+          BottomNavigationBarItem(icon: Icon(Icons.home_rounded), label: 'Home'),
+          BottomNavigationBarItem(icon: Icon(Icons.camera_alt_rounded), label: 'Capture'),
+          BottomNavigationBarItem(icon: Icon(Icons.cloud_done), label: 'My Evidence'),
+          BottomNavigationBarItem(icon: Icon(Icons.sync_rounded), label: 'Sync'),
+          BottomNavigationBarItem(icon: Icon(Icons.person_rounded), label: 'Profile'),
         ],
       ),
     );
   }
-}
 
-// ── Stat tile widget ──────────────────────────────────────────────────────
-
-class _StatTile extends StatelessWidget {
-  final String label;
-  final String value;
-  final IconData icon;
-  final Color color;
-
-  const _StatTile({
-    required this.label,
-    required this.value,
-    required this.icon,
-    required this.color,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Expanded(
-      child: Container(
-        padding: const EdgeInsets.all(14),
-        decoration: BoxDecoration(
-          color: const Color(0xFF1A2940),
-          borderRadius: BorderRadius.circular(14),
-          border: Border.all(
-            color: color.withAlpha(40),
-          ),
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Icon(icon, color: color, size: 20),
-            const SizedBox(height: 8),
-            Text(
-              value,
-              style: TextStyle(
-                color: Colors.white,
-                fontSize: 22,
-                fontWeight: FontWeight.w700,
+  Widget _buildHomeSummary(ThemeData theme, user, EvidenceService evidenceService) {
+    return GradientBackground(
+      addOverlay: true,
+      child: SafeArea(
+        child: CustomScrollView(
+          slivers: [
+            SliverToBoxAdapter(
+              child: Padding(
+                padding: const EdgeInsets.all(20),
+                child: Row(
+                  children: [
+                    CircleAvatar(
+                      radius: 24,
+                      backgroundColor: const Color(0xFF00BFA6),
+                      child: Text(
+                        user?.name?.isNotEmpty == true ? user!.name!.substring(0, 1).toUpperCase() : 'U',
+                        style: const TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold),
+                      ),
+                    ),
+                    const SizedBox(width: 14),
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text('Welcome back,', style: theme.textTheme.bodySmall),
+                        Text(user?.name ?? 'User', style: theme.textTheme.titleLarge),
+                      ],
+                    ),
+                  ],
+                ),
               ),
             ),
-            Text(
-              label,
-              style: TextStyle(
-                color: const Color(0xFF6B7A8D),
-                fontSize: 12,
+            SliverToBoxAdapter(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 20),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text('USER DASHBOARD', style: theme.textTheme.labelMedium?.copyWith(letterSpacing: 1.5, color: Colors.white54)),
+                    const SizedBox(height: 16),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: _buildSummaryCard(
+                            title: 'Pending Sync',
+                            value: evidenceService.evidenceList.where((e) => e.syncStatus == SyncStatus.pending || e.syncStatus == SyncStatus.failed).length.toString(),
+                            icon: Icons.sync_problem,
+                            color: Colors.orangeAccent,
+                            onTap: () => _onTabTapped(3),
+                          ),
+                        ),
+                        const SizedBox(width: 16),
+                        Expanded(
+                          child: _buildSummaryCard(
+                            title: 'New Capture',
+                            value: '+',
+                            icon: Icons.add_a_photo,
+                            color: const Color(0xFF00BFA6),
+                            onTap: () => _onTabTapped(1),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
               ),
             ),
           ],
@@ -343,74 +144,27 @@ class _StatTile extends StatelessWidget {
       ),
     );
   }
-}
 
-// ── Action card widget ────────────────────────────────────────────────────
-
-class _ActionCard extends StatelessWidget {
-  final IconData icon;
-  final String title;
-  final String subtitle;
-  final LinearGradient gradient;
-  final VoidCallback onTap;
-
-  const _ActionCard({
-    required this.icon,
-    required this.title,
-    required this.subtitle,
-    required this.gradient,
-    required this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(16),
-        child: Container(
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            color: const Color(0xFF1A2940),
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(
-              color: Colors.white.withAlpha(10),
-            ),
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Container(
-                width: 42,
-                height: 42,
-                decoration: BoxDecoration(
-                  gradient: gradient,
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Icon(icon, color: Colors.white, size: 22),
-              ),
-              const Spacer(),
-              Text(
-                title,
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 15,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-              const SizedBox(height: 2),
-              Text(
-                subtitle,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: const TextStyle(
-                  color: Color(0xFF6B7A8D),
-                  fontSize: 12,
-                ),
-              ),
-            ],
-          ),
+  Widget _buildSummaryCard({required String title, required String value, required IconData icon, required Color color, required VoidCallback onTap}) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.all(20),
+        decoration: BoxDecoration(
+          color: const Color(0xFF1E2D4A),
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(color: Colors.white.withAlpha(20)),
+          boxShadow: [BoxShadow(color: Colors.black.withAlpha(40), blurRadius: 10, offset: const Offset(0, 4))],
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Icon(icon, color: color, size: 28),
+            const SizedBox(height: 16),
+            Text(value, style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Colors.white)),
+            const SizedBox(height: 4),
+            Text(title, style: const TextStyle(color: Colors.white70, fontSize: 13)),
+          ],
         ),
       ),
     );

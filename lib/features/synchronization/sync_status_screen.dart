@@ -13,7 +13,9 @@ import '../../widgets/status_badge.dart';
 
 /// Upload queue view showing all evidence items with sync status.
 class SyncStatusScreen extends StatefulWidget {
-  const SyncStatusScreen({super.key});
+  final bool showBottomNav;
+
+  const SyncStatusScreen({super.key, this.showBottomNav = false});
 
   @override
   State<SyncStatusScreen> createState() => _SyncStatusScreenState();

@@ -11,7 +11,9 @@ import '../../widgets/secure_app_bar.dart';
 
 /// Officer profile display with logout functionality.
 class ProfileScreen extends StatelessWidget {
-  const ProfileScreen({super.key});
+  final bool showBottomNav;
+
+  const ProfileScreen({super.key, this.showBottomNav = false});
 
   @override
   Widget build(BuildContext context) {
@@ -160,7 +162,7 @@ class ProfileScreen extends StatelessWidget {
           ),
         ),
       ),
-      bottomNavigationBar: const AppBottomNavBar(currentIndex: 3),
+      bottomNavigationBar: showBottomNav ? null : const AppBottomNavBar(currentIndex: 3),
     );
   }
 

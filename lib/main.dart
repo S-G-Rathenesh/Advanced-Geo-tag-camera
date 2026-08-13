@@ -17,6 +17,7 @@ import 'features/synchronization/sync_status_screen.dart';
 import 'services/auth_service.dart';
 import 'services/evidence_service.dart';
 import 'services/sync_service.dart';
+import 'services/api_service.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
@@ -33,6 +34,7 @@ class GeoEvidenceApp extends StatelessWidget {
         ChangeNotifierProvider(create: (_) => AuthService()),
         ChangeNotifierProvider(create: (_) => EvidenceService()),
         ChangeNotifierProvider(create: (_) => SyncService()),
+        Provider(create: (_) => ApiService()),
       ],
       child: MaterialApp(
         title: 'GeoEvidence',
