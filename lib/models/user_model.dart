@@ -27,6 +27,9 @@ class UserModel {
     required this.isActive,
   });
 
+  String get roleLabel => role.name.toUpperCase();
+  String get badgeNumber => username ?? email ?? userId;
+
   factory UserModel.fromJson(Map<String, dynamic> json) {
     return UserModel(
       userId: json['id'] as String,

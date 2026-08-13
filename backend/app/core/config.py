@@ -16,9 +16,9 @@ class Settings(BaseSettings):
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 60 * 24 * 7  # 7 days
 
     # Cloudinary
-    CLOUDINARY_CLOUD_NAME: str = "dks0ztsc4"
-    CLOUDINARY_API_KEY: str = "721348143457869"
-    CLOUDINARY_API_SECRET: str = "El9U41Izf5NwOQ55_oSUL2OtmDQ"
+    CLOUDINARY_CLOUD_NAME: str
+    CLOUDINARY_API_KEY: str
+    CLOUDINARY_API_SECRET: str
 
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")
 

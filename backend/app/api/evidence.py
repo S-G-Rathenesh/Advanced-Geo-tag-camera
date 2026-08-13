@@ -40,7 +40,7 @@ async def upload_evidence_endpoint(
     file_bytes = await file.read()
     
     if not verify_hash(file_bytes, payload_hash):
-        log_audit_event(db, action="EVIDENCE_UPLOAD_FAILED", user_id=current_user.id, details="Payload hash verification failed")
+        log_audit_event(db, action="INTEGRITY_VERIFICATION_FAILED", user_id=current_user.id, details="Payload hash verification failed")
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail={

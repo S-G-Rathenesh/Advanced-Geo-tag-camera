@@ -19,7 +19,7 @@ class UserDashboard extends StatefulWidget {
 
 class _UserDashboardState extends State<UserDashboard>
     with SingleTickerProviderStateMixin {
-  int _currentIndex = 0;
+  final int _currentIndex = 0;
   late AnimationController _animController;
 
   @override

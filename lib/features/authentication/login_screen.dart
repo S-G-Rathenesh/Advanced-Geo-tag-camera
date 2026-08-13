@@ -6,7 +6,6 @@ import '../../models/login_request.dart';
 import '../../services/auth_service.dart';
 import '../../widgets/gradient_background.dart';
 import '../../widgets/loading_overlay.dart';
-import '../../models/user_model.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -74,7 +73,7 @@ class _LoginScreenState extends State<LoginScreen>
     _handleResponse(response);
   }
 
-  void _handleResponse(response) {
+  void _handleResponse(dynamic response) {
     if (!mounted) return;
 
     if (response.success) {

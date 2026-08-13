@@ -1,7 +1,7 @@
 from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from app.api import auth, evidence, users, audit
+from app.api import auth, evidence, users, audit, health
 from app.core.database import engine, Base, SessionLocal
 from app.models.role import Role
 from app.models.user import User
@@ -90,6 +90,7 @@ app.include_router(auth.router, prefix="/api/v1/auth", tags=["auth"])
 app.include_router(evidence.router, prefix="/api/v1/evidence", tags=["evidence"])
 app.include_router(users.router, prefix="/api/v1/users", tags=["users"])
 app.include_router(audit.router, prefix="/api/v1/audit", tags=["audit"])
+app.include_router(health.router, prefix="/api/v1/health", tags=["health"])
 
 @app.get("/")
 def root():
