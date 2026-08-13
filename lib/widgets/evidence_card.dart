@@ -1,5 +1,6 @@
 import 'dart:io';
 
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
@@ -106,6 +107,27 @@ class EvidenceCard extends StatelessWidget {
   }
 
   Widget _buildThumbnail() {
+    // On web, dart:io File is not available
+    if (kIsWeb) {
+      return Container(
+        width: 56,
+        height: 56,
+        decoration: BoxDecoration(
+          color: const Color(0xFF1A2940),
+          borderRadius: BorderRadius.circular(10),
+        ),
+        child: record.imagePath.startsWith('http')
+            ? Image.network(
+                record.imagePath,
+                width: 56,
+                height: 56,
+                fit: BoxFit.cover,
+                errorBuilder: (context, error, stackTrace) => _placeholderIcon(),
+              )
+            : _placeholderIcon(),
+      );
+    }
+
     final file = File(record.imagePath);
 
     return Container(

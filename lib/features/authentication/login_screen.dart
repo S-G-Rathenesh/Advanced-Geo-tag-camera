@@ -171,7 +171,7 @@ class _LoginScreenState extends State<LoginScreen>
                         ),
                         const SizedBox(height: 24),
                         Text(
-                          'GeoEvidence',
+                          'Secure Geo-Tag',
                           style: theme.textTheme.headlineMedium?.copyWith(
                             fontWeight: FontWeight.w700,
                           ),

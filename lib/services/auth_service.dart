@@ -23,28 +23,11 @@ class AuthService extends ChangeNotifier {
   bool get isLoading => _isLoading;
   String? get error => _error;
 
+  /// Officer login via username/password against FastAPI backend.
   Future<LoginResponse> login(LoginRequest request) async {
     _isLoading = true;
     _error = null;
     notifyListeners();
-
-    // --- DEMO FALLBACK FOR OFFLINE / PHYSICAL DEVICE TESTING ---
-    if (request.email == 'demo_officer' && request.password == 'password123') {
-      await Future.delayed(const Duration(seconds: 1));
-      _currentUser = const UserModel(
-        userId: 'officer_123',
-        name: 'James Chen',
-        email: 'james.chen@geoevidence.com',
-        role: UserRole.officer,
-        department: 'GE-2024-0451',
-        isActive: true,
-      );
-      final token = 'mock_officer_token';
-      await _secureStorage.saveToken(token);
-      _isLoading = false;
-      notifyListeners();
-      return LoginResponse(success: true, token: token, user: _currentUser);
-    }
 
     try {
       final url = Uri.parse('${AppConstants.apiBaseUrl}/auth/officer/login');
@@ -65,6 +48,7 @@ class AuthService extends ChangeNotifier {
         await _secureStorage.saveToken(token);
         _currentUser = UserModel.fromJson(userJson);
         
+        debugPrint('[AUTH] Officer login success: ${_currentUser?.roleLabel}');
         _isLoading = false;
         notifyListeners();
         return LoginResponse(success: true, token: token, user: _currentUser);
@@ -82,35 +66,12 @@ class AuthService extends ChangeNotifier {
     }
   }
 
+  /// Google-style login via mock JWT sent to FastAPI /auth/google endpoint.
+  /// Used by Demo Supervisor, Demo User, and Mock Google login dialog.
   Future<LoginResponse> googleLogin(String mockEmail, String mockSub, String mockName) async {
     _isLoading = true;
     _error = null;
     notifyListeners();
-
-    // --- DEMO FALLBACK FOR OFFLINE / PHYSICAL DEVICE TESTING ---
-    if (mockEmail.startsWith('demo.')) {
-      await Future.delayed(const Duration(seconds: 1));
-      UserRole role = UserRole.user;
-      String dept = 'General';
-      if (mockEmail.contains('supervisor')) {
-        role = UserRole.supervisor;
-        dept = 'HQ Admin';
-      }
-      
-      _currentUser = UserModel(
-        userId: mockSub,
-        name: mockName,
-        email: mockEmail,
-        role: role,
-        department: dept,
-        isActive: true,
-      );
-      final token = 'mock_google_token_$mockSub';
-      await _secureStorage.saveToken(token);
-      _isLoading = false;
-      notifyListeners();
-      return LoginResponse(success: true, token: token, user: _currentUser);
-    }
 
     try {
       // Create a mock JWT to simulate a Google Identity token
@@ -140,6 +101,7 @@ class AuthService extends ChangeNotifier {
         await _secureStorage.saveToken(token);
         _currentUser = UserModel.fromJson(userJson);
         
+        debugPrint('[AUTH] Google login success: ${_currentUser?.roleLabel}');
         _isLoading = false;
         notifyListeners();
         return LoginResponse(success: true, token: token, user: _currentUser);
@@ -157,6 +119,7 @@ class AuthService extends ChangeNotifier {
     }
   }
 
+  /// Attempt to restore session from stored JWT by calling /auth/me.
   Future<bool> tryAutoLogin() async {
     final hasSession = await _secureStorage.hasValidSession();
     if (!hasSession) return false;
@@ -177,13 +140,16 @@ class AuthService extends ChangeNotifier {
       if (response.statusCode == 200) {
         final userJson = jsonDecode(response.body) as Map<String, dynamic>;
         _currentUser = UserModel.fromJson(userJson);
+        debugPrint('[AUTH] Auto-login restored: ${_currentUser?.roleLabel}');
         notifyListeners();
         return true;
       } else {
+        debugPrint('[AUTH] Auto-login failed: ${response.statusCode}');
         await logout();
         return false;
       }
     } catch (e) {
+      debugPrint('[AUTH] Auto-login error: $e');
       await logout();
       return false;
     }

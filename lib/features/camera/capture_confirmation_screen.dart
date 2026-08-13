@@ -5,6 +5,7 @@ import 'package:geolocator/geolocator.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 
+import '../../core/constants/app_constants.dart';
 import '../../core/constants/app_routes.dart';
 import '../../core/constants/app_theme.dart';
 import '../../core/utils/device_info_helper.dart';
@@ -70,6 +71,19 @@ class _CaptureConfirmationScreenState
           content: const Text(
               'Cannot save evidence without GPS coordinates'),
           backgroundColor: Theme.of(context).colorScheme.error,
+        ),
+      );
+      return;
+    }
+
+    if (!_locationService.meetsAccuracyThreshold(_position!)) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            'GPS accuracy (±${_position!.accuracy.toStringAsFixed(1)}m) exceeds required threshold (±${AppConstants.gpsAccuracyThresholdMetres.toStringAsFixed(1)}m). Capture rejected.',
+          ),
+          backgroundColor: Theme.of(context).colorScheme.error,
+          behavior: SnackBarBehavior.floating,
         ),
       );
       return;

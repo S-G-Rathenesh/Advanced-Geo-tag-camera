@@ -4,6 +4,7 @@ from app.core.database import get_db
 from app.models.user import User
 from app.models.role import Role
 from app.schemas.auth import LoginRequest, GoogleAuthRequest, Token
+from app.schemas.user import UserResponse
 from app.core.security import verify_password, create_access_token
 from app.services.audit_service import log_audit_event
 from app.services.auth_service import require_authenticated_user
@@ -13,7 +14,7 @@ import base64
 
 router = APIRouter()
 
-@router.get("/me")
+@router.get("/me", response_model=UserResponse)
 def get_me(current_user: User = Depends(require_authenticated_user)):
     return current_user
 

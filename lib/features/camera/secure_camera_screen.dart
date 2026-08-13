@@ -1,4 +1,5 @@
 import 'package:camera/camera.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 
 import '../../core/constants/app_routes.dart';
@@ -87,6 +88,45 @@ class _SecureCameraScreenState extends State<SecureCameraScreen>
 
   @override
   Widget build(BuildContext context) {
+    // Web platform guard — camera plugin is not supported on Flutter Web
+    if (kIsWeb) {
+      return Scaffold(
+        backgroundColor: Colors.black,
+        appBar: AppBar(
+          backgroundColor: Colors.transparent,
+          iconTheme: const IconThemeData(color: Colors.white),
+        ),
+        body: Center(
+          child: Padding(
+            padding: const EdgeInsets.all(32),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Icon(Icons.camera_alt_rounded, size: 64, color: Color(0xFF00BFA6)),
+                const SizedBox(height: 24),
+                const Text(
+                  'Secure Evidence Camera',
+                  style: TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold),
+                ),
+                const SizedBox(height: 16),
+                const Text(
+                  'The secure evidence camera is available on the Android application.\n\nPlease use the Android app for official evidence capture.',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(color: Colors.white70, fontSize: 15),
+                ),
+                const SizedBox(height: 32),
+                ElevatedButton.icon(
+                  onPressed: () => Navigator.pop(context),
+                  icon: const Icon(Icons.arrow_back),
+                  label: const Text('Go Back'),
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+    }
+
     if (_error != null) {
       return Scaffold(
         backgroundColor: Colors.black,

@@ -40,8 +40,8 @@ class _SupervisorDashboardState extends State<SupervisorDashboard> {
       _buildHomeSummary(theme, user, evidenceService),
       // 1: Placeholder for Capture
       const SizedBox.shrink(),
-      // 2: My Evidence (Cloud)
-      CloudEvidenceScreen(title: 'My Evidence', userId: user?.userId, showBottomNav: true),
+      // 2: My Evidence (Cloud) — calls /evidence/my
+      const CloudEvidenceScreen(title: 'My Evidence', isMyEvidence: true, showBottomNav: true),
       // 3: Team
       const UserManagementScreen(showBottomNav: true),
       // 4: Profile

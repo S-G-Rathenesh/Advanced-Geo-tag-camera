@@ -29,6 +29,15 @@ class _UserManagementScreenState extends State<UserManagementScreen> {
   }
 
   Future<void> _fetchUsers() async {
+    final currentUser = context.read<AuthService>().currentUser;
+    if (currentUser?.role == UserRole.user) {
+      setState(() {
+        _isLoading = false;
+        _error = 'Access Denied: Standard users cannot view user lists.';
+      });
+      return;
+    }
+
     setState(() {
       _isLoading = true;
       _error = null;
@@ -94,6 +103,34 @@ class _UserManagementScreenState extends State<UserManagementScreen> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final currentUser = context.read<AuthService>().currentUser;
+
+    if (currentUser?.role == UserRole.user) {
+      return Scaffold(
+        appBar: const SecureAppBar(title: 'Access Restricted'),
+        body: GradientBackground(
+          child: Center(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Icon(Icons.lock_outline_rounded, color: Colors.redAccent, size: 54),
+                const SizedBox(height: 16),
+                Text('Access Restricted', style: theme.textTheme.titleLarge),
+                const SizedBox(height: 8),
+                const Padding(
+                  padding: EdgeInsets.symmetric(horizontal: 32),
+                  child: Text(
+                    'Standard users are not authorized to view team or user management.',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(color: Colors.white70),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+    }
+
     final isOfficer = currentUser?.role == UserRole.officer;
 
     Widget body = _isLoading

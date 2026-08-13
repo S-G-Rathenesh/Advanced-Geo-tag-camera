@@ -55,6 +55,13 @@ class SyncService extends ChangeNotifier {
   Future<void> syncAll() async {
     if (_isSyncing) return;
 
+    // Web platform guard — dart:io File not available on web
+    if (kIsWeb) {
+      _lastError = 'Sync is available on the Android application';
+      notifyListeners();
+      return;
+    }
+
     final connected = await hasConnection();
     if (!connected) {
       _lastError = 'No internet connection';
@@ -93,6 +100,17 @@ class SyncService extends ChangeNotifier {
 
       if (success) {
         await _dao.updateSyncStatus(record.captureId, SyncStatus.synced);
+        if (record.encryptedPath != null && record.encryptedPath!.isNotEmpty) {
+          try {
+            final file = File(record.encryptedPath!);
+            if (await file.exists()) {
+              await file.delete();
+              debugPrint('[SYNC] Purged synced encrypted file: ${record.encryptedPath}');
+            }
+          } catch (e) {
+            debugPrint('[SYNC] Warning: Failed to delete encrypted file after sync (${record.captureId}): $e');
+          }
+        }
       } else {
         await _dao.updateSyncStatus(record.captureId, SyncStatus.failed);
         await _dao.incrementRetryCount(record.captureId);

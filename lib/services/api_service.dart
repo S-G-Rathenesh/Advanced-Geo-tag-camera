@@ -1,5 +1,6 @@
 import 'dart:convert';
-import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:flutter/foundation.dart';
+import '../core/security/secure_storage_service.dart';
 import 'package:http/http.dart' as http;
 import '../core/constants/app_constants.dart';
 import '../models/user_model.dart';
@@ -7,10 +8,10 @@ import '../models/evidence_record.dart';
 import '../models/sync_status.dart';
 
 class ApiService {
-  final _secureStorage = const FlutterSecureStorage();
+  final _secureStorage = SecureStorageService();
 
   Future<String?> _getToken() async {
-    return await _secureStorage.read(key: AppConstants.jwtStorageKey);
+    return await _secureStorage.getToken();
   }
 
   Future<Map<String, String>> _getHeaders() async {
@@ -25,7 +26,9 @@ class ApiService {
 
   Future<List<UserModel>> getUsers() async {
     final url = Uri.parse('${AppConstants.apiBaseUrl}/users');
+    debugPrint('[API] GET /users');
     final response = await http.get(url, headers: await _getHeaders());
+    debugPrint('[API] GET /users -> ${response.statusCode}');
 
     if (response.statusCode == 200) {
       final List<dynamic> data = jsonDecode(response.body);
@@ -37,7 +40,9 @@ class ApiService {
 
   Future<void> grantSupervisor(String userId) async {
     final url = Uri.parse('${AppConstants.apiBaseUrl}/users/$userId/grant-supervisor');
+    debugPrint('[API] POST /users/$userId/grant-supervisor');
     final response = await http.post(url, headers: await _getHeaders());
+    debugPrint('[API] POST grant-supervisor -> ${response.statusCode}');
 
     if (response.statusCode != 200) {
       throw Exception('Failed to grant supervisor: ${response.statusCode}');
@@ -46,7 +51,9 @@ class ApiService {
 
   Future<void> revokeSupervisor(String userId) async {
     final url = Uri.parse('${AppConstants.apiBaseUrl}/users/$userId/revoke-supervisor');
+    debugPrint('[API] POST /users/$userId/revoke-supervisor');
     final response = await http.post(url, headers: await _getHeaders());
+    debugPrint('[API] POST revoke-supervisor -> ${response.statusCode}');
 
     if (response.statusCode != 200) {
       throw Exception('Failed to revoke supervisor: ${response.statusCode}');
@@ -57,7 +64,9 @@ class ApiService {
 
   Future<List<EvidenceRecord>> getAllEvidence() async {
     final url = Uri.parse('${AppConstants.apiBaseUrl}/evidence');
+    debugPrint('[API] GET /evidence');
     final response = await http.get(url, headers: await _getHeaders());
+    debugPrint('[API] GET /evidence -> ${response.statusCode}');
 
     if (response.statusCode == 200) {
       final List<dynamic> data = jsonDecode(response.body);
@@ -69,7 +78,9 @@ class ApiService {
 
   Future<List<EvidenceRecord>> getMyEvidence() async {
     final url = Uri.parse('${AppConstants.apiBaseUrl}/evidence/my');
+    debugPrint('[API] GET /evidence/my');
     final response = await http.get(url, headers: await _getHeaders());
+    debugPrint('[API] GET /evidence/my -> ${response.statusCode}');
 
     if (response.statusCode == 200) {
       final List<dynamic> data = jsonDecode(response.body);
@@ -81,7 +92,9 @@ class ApiService {
 
   Future<List<EvidenceRecord>> getUserEvidence(String userId) async {
     final url = Uri.parse('${AppConstants.apiBaseUrl}/users/$userId/evidence');
+    debugPrint('[API] GET /users/$userId/evidence');
     final response = await http.get(url, headers: await _getHeaders());
+    debugPrint('[API] GET /users/$userId/evidence -> ${response.statusCode}');
 
     if (response.statusCode == 200) {
       final List<dynamic> data = jsonDecode(response.body);
@@ -97,10 +110,10 @@ class ApiService {
       userId: json['user_id'],
       deviceId: json['device_id'],
       imagePath: json['image_url'] ?? '',
-      latitude: json['latitude'],
-      longitude: json['longitude'],
-      altitude: json['altitude'],
-      accuracy: json['gps_accuracy'],
+      latitude: (json['latitude'] as num).toDouble(),
+      longitude: (json['longitude'] as num).toDouble(),
+      altitude: json['altitude'] != null ? (json['altitude'] as num).toDouble() : null,
+      accuracy: (json['gps_accuracy'] as num).toDouble(),
       timestamp: DateTime.parse(json['capture_timestamp']),
       sha256Hash: json['sha256_hash'],
       syncStatus: SyncStatus.synced,

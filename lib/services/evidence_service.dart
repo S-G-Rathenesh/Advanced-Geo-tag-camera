@@ -64,6 +64,14 @@ class EvidenceService extends ChangeNotifier {
     double? altitude,
     required double accuracy,
   }) async {
+    // Web platform guard — dart:io and sqflite not available on web
+    if (kIsWeb) {
+      throw UnsupportedError(
+        'Evidence capture pipeline requires the Android application. '
+        'File I/O and local SQLite storage are not available on Flutter Web.',
+      );
+    }
+
     final captureId = _idGenerator.generate();
     final now = DateTime.now();
 
@@ -119,6 +127,14 @@ class EvidenceService extends ChangeNotifier {
     _isLoading = true;
     notifyListeners();
 
+    // Web platform guard — sqflite not available on web
+    if (kIsWeb) {
+      _evidenceList = [];
+      _isLoading = false;
+      notifyListeners();
+      return;
+    }
+
     _evidenceList = await _dao.getAll(status: status);
 
     _isLoading = false;
@@ -156,6 +172,7 @@ class EvidenceService extends ChangeNotifier {
 
   /// Get sync status counts for dashboard display.
   Future<Map<SyncStatus, int>> getSyncCounts() async {
+    if (kIsWeb) return {};
     return _dao.getCounts();
   }
 }

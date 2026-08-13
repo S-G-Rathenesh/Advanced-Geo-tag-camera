@@ -1,5 +1,6 @@
 import 'dart:io';
 
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
@@ -94,14 +95,30 @@ class _EvidenceDetailsScreenState extends State<EvidenceDetailsScreen> {
                 borderRadius: BorderRadius.circular(16),
                 child: AspectRatio(
                   aspectRatio: 4 / 3,
-                  child: File(record.imagePath).existsSync()
-                      ? Image.file(
-                          File(record.imagePath),
-                          fit: BoxFit.cover,
-                          errorBuilder: (context, error, stackTrace) =>
-                              _imagePlaceholder(),
-                        )
-                      : _imagePlaceholder(),
+                  child: kIsWeb
+                      ? (record.imagePath.startsWith('http')
+                          ? Image.network(
+                              record.imagePath,
+                              fit: BoxFit.cover,
+                              errorBuilder: (context, error, stackTrace) =>
+                                  _imagePlaceholder(),
+                            )
+                          : _imagePlaceholder())
+                      : (File(record.imagePath).existsSync()
+                          ? Image.file(
+                              File(record.imagePath),
+                              fit: BoxFit.cover,
+                              errorBuilder: (context, error, stackTrace) =>
+                                  _imagePlaceholder(),
+                            )
+                          : (record.imagePath.startsWith('http')
+                              ? Image.network(
+                                  record.imagePath,
+                                  fit: BoxFit.cover,
+                                  errorBuilder: (context, error, stackTrace) =>
+                                      _imagePlaceholder(),
+                                )
+                              : _imagePlaceholder())),
                 ),
               ),
 

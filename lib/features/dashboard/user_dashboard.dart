@@ -42,8 +42,8 @@ class _UserDashboardState extends State<UserDashboard> {
       _buildHomeSummary(theme, user, evidenceService),
       // 1: Placeholder for Capture
       const SizedBox.shrink(),
-      // 2: My Evidence (Cloud)
-      CloudEvidenceScreen(title: 'My Evidence', userId: user?.userId, showBottomNav: true),
+      // 2: My Evidence (Cloud) — calls /evidence/my
+      const CloudEvidenceScreen(title: 'My Evidence', isMyEvidence: true, showBottomNav: true),
       // 3: Sync Status (Offline Queue)
       const SyncStatusScreen(),
       // 4: Profile
