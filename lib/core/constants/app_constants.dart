@@ -12,7 +12,8 @@ class AppConstants {
 
   // ── API Configuration ─────────────────────────────────────────────────
   /// Base URL placeholder – replaced when FastAPI backend is integrated.
-  static const String apiBaseUrl = 'https://api.geotag-evidence.local';
+  /// 10.0.2.2 is the localhost loopback for the Android emulator.
+  static const String apiBaseUrl = 'http://10.0.2.2:8000/api/v1';
   static const Duration apiTimeout = Duration(seconds: 30);
 
   // ── GPS / Location ────────────────────────────────────────────────────
@@ -23,10 +24,8 @@ class AppConstants {
   /// Location request timeout.
   static const Duration locationTimeout = Duration(seconds: 15);
 
-  // Cloudinary configuration
-  static const String cloudinaryCloudName = 'dks0ztsc4';
-  static const String cloudinaryApiKey = '721348143457869';
-  static const String cloudinaryApiSecret = 'El9U41Izf5NwOQ55_oSUL2OtmDQ';
+  // Cloudinary configuration (Moved to FastAPI backend)
+  // static const String cloudinaryCloudName = '...';
 
   // ── Synchronization ───────────────────────────────────────────────────
   static const Duration syncRetryInterval = Duration(minutes: 5);

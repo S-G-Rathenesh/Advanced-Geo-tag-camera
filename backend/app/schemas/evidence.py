@@ -1,0 +1,36 @@
+from pydantic import BaseModel
+from datetime import datetime
+
+class EvidenceUploadRequest(BaseModel):
+    capture_id: str
+    device_id: str
+    sha256_hash: str
+    payload_hash: str
+    latitude: float
+    longitude: float
+    altitude: float | None = None
+    gps_accuracy: float
+    capture_timestamp: datetime
+
+class EvidenceResponse(BaseModel):
+    id: str
+    capture_id: str
+    user_id: str
+    device_id: str
+    image_url: str
+    sha256_hash: str
+    latitude: float
+    longitude: float
+    altitude: float | None
+    gps_accuracy: float
+    capture_timestamp: datetime
+    upload_timestamp: datetime
+    status: str
+
+    class Config:
+        from_attributes = True
+
+class IntegrityVerificationResponse(BaseModel):
+    capture_id: str
+    integrity: str
+    hash_match: bool
