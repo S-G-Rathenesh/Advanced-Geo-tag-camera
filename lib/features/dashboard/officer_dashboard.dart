@@ -20,7 +20,6 @@ class OfficerDashboard extends StatefulWidget {
 
 class _OfficerDashboardState extends State<OfficerDashboard>
     with SingleTickerProviderStateMixin {
-  int _currentIndex = 0;
   late AnimationController _animController;
 
   @override
