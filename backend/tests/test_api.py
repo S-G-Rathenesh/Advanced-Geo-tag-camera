@@ -1,7 +1,8 @@
 import pytest
+import os
 from fastapi.testclient import TestClient
 from app.main import app
-from app.core.database import Base, engine, get_db
+from app.core.database import Base, get_db
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from app.models.role import Role
@@ -22,26 +23,43 @@ def override_get_db():
 
 app.dependency_overrides[get_db] = override_get_db
 
-client = TestClient(app)
-
 @pytest.fixture(scope="module", autouse=True)
 def setup_database():
     Base.metadata.create_all(bind=engine_test)
     db = TestingSessionLocal()
     
-    # Create roles
-    role_officer = Role(name="FIELD_OFFICER")
-    role_admin = Role(name="ADMIN")
-    db.add_all([role_officer, role_admin])
-    db.commit()
+    # Create roles safely
+    role_officer = db.query(Role).filter(Role.name == "FIELD_OFFICER").first()
+    if not role_officer:
+        role_officer = Role(name="FIELD_OFFICER")
+        db.add(role_officer)
     
-    # Create user
-    user = User(username="testuser", password_hash=get_password_hash("password123"), role_id=role_officer.id)
-    db.add(user)
+    role_admin = db.query(Role).filter(Role.name == "ADMIN").first()
+    if not role_admin:
+        role_admin = Role(name="ADMIN")
+        db.add(role_admin)
+        
     db.commit()
+    db.refresh(role_officer)
+    db.refresh(role_admin)
+    
+    # Create test user safely
+    user = db.query(User).filter(User.username == "testuser").first()
+    if not user:
+        user = User(username="testuser", password_hash=get_password_hash("password123"), role_id=role_officer.id)
+        db.add(user)
+        db.commit()
     
     yield
+    db.close()
     Base.metadata.drop_all(bind=engine_test)
+    if os.path.exists("./test.db"):
+        try:
+            os.remove("./test.db")
+        except Exception:
+            pass
+
+client = TestClient(app)
 
 def test_login_success():
     response = client.post("/api/v1/auth/login", json={"username": "testuser", "password": "password123"})
