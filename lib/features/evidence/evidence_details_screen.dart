@@ -75,9 +75,11 @@ class _EvidenceDetailsScreenState extends State<EvidenceDetailsScreen> {
       appBar: SecureAppBar(
         title: 'Evidence Details',
         actions: [
-          Padding(
-            padding: const EdgeInsets.only(right: 12),
-            child: StatusBadge(status: record.syncStatus),
+          UnconstrainedBox(
+            child: Padding(
+              padding: const EdgeInsets.only(right: 12),
+              child: StatusBadge(status: record.syncStatus),
+            ),
           ),
         ],
       ),

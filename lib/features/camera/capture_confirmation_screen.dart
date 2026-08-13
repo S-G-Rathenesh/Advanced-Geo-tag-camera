@@ -311,7 +311,10 @@ class _CaptureConfirmationScreenState
                                   AppRoutes.secureCamera);
                             },
                             icon: const Icon(Icons.refresh_rounded),
-                            label: const Text('Retake'),
+                            label: const FittedBox(
+                              fit: BoxFit.scaleDown,
+                              child: Text('Retake'),
+                            ),
                             style: OutlinedButton.styleFrom(
                               side: const BorderSide(
                                 color: Color(0xFF6B7A8D),
@@ -337,7 +340,10 @@ class _CaptureConfirmationScreenState
                                 : null,
                             icon: const Icon(
                                 Icons.check_circle_rounded),
-                            label: const Text('Accept & Queue'),
+                            label: const FittedBox(
+                              fit: BoxFit.scaleDown,
+                              child: Text('Accept & Queue'),
+                            ),
                           ),
                         ),
                       ),

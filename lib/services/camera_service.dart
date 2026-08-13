@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:camera/camera.dart';
+import 'package:flutter/foundation.dart';
 import 'package:path_provider/path_provider.dart';
 
 /// Camera lifecycle management service.
@@ -110,14 +111,19 @@ class CameraService {
   Future<void> toggleFlash() async {
     if (_controller == null) return;
 
-    final currentMode = _controller!.value.flashMode;
-    final newMode = currentMode == FlashMode.off
-        ? FlashMode.auto
-        : currentMode == FlashMode.auto
-            ? FlashMode.always
-            : FlashMode.off;
-
-    await _controller!.setFlashMode(newMode);
+    final modes = [FlashMode.off, FlashMode.auto, FlashMode.always];
+    int currentIndex = modes.indexOf(_controller!.value.flashMode);
+    
+    // Try setting the next modes until one succeeds
+    for (int i = 1; i <= modes.length; i++) {
+      final nextMode = modes[(currentIndex + i) % modes.length];
+      try {
+        await _controller!.setFlashMode(nextMode);
+        return; // Success, stop trying
+      } catch (e) {
+        debugPrint('Flash mode $nextMode not supported: $e');
+      }
+    }
   }
 
   /// Dispose the camera controller.
