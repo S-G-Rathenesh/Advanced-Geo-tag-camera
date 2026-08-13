@@ -23,6 +23,11 @@ class AppConstants {
   /// Location request timeout.
   static const Duration locationTimeout = Duration(seconds: 15);
 
+  // Cloudinary configuration
+  static const String cloudinaryCloudName = 'dks0ztsc4';
+  static const String cloudinaryApiKey = '721348143457869';
+  static const String cloudinaryApiSecret = 'El9U41Izf5NwOQ55_oSUL2OtmDQ';
+
   // ── Synchronization ───────────────────────────────────────────────────
   static const Duration syncRetryInterval = Duration(minutes: 5);
   static const int maxSyncRetries = 3;

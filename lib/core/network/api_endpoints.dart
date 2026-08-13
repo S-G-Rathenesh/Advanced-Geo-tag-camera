@@ -13,6 +13,12 @@ class ApiEndpoints {
 
   // ── Evidence ──────────────────────────────────────────────────────────
   static const String uploadEvidence = '/evidence/upload';
+  static const String syncEvidence = '/sync/evidence';
+  
+  // Cloudinary
+  static String cloudinaryUpload(String cloudName) => 
+      'https://api.cloudinary.com/v1_1/$cloudName/image/upload';
+
   static const String listEvidence = '/evidence/list';
   static const String evidenceDetail = '/evidence/'; // + captureId
 
