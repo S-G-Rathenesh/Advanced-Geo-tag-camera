@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 
 import '../../core/constants/app_routes.dart';
 import '../../services/auth_service.dart';
+import '../../models/login_request.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -113,6 +114,11 @@ class _LoginScreenState extends State<LoginScreen> with TickerProviderStateMixin
 
   Future<void> _handleDemoLogin(String username) async {
     final authService = context.read<AuthService>();
+    if (username == 'demo_officer') {
+      final response = await authService.login(LoginRequest(email: 'demo_officer', password: 'password123'));
+      _handleResponse(response);
+      return;
+    }
     final response = await authService.demoLogin(username);
     _handleResponse(response);
   }

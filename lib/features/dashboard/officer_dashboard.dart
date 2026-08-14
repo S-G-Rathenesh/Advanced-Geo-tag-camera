@@ -49,50 +49,52 @@ class _OfficerDashboardState extends State<OfficerDashboard> {
         index: _currentIndex,
         children: pages,
       ),
-      bottomNavigationBar: Container(
-        decoration: const BoxDecoration(
-          color: Color(0xFF060B14),
-          border: Border(
-            top: BorderSide(color: Color(0xFF1E293B), width: 1),
+      bottomNavigationBar: SafeArea(
+        child: Container(
+          decoration: const BoxDecoration(
+            color: Color(0xFF060B14),
+            border: Border(
+              top: BorderSide(color: Color(0xFF1E293B), width: 1),
+            ),
           ),
-        ),
-        child: BottomNavigationBar(
-          currentIndex: _currentIndex,
-          onTap: _onTabTapped,
-          backgroundColor: const Color(0xFF060B14),
-          selectedItemColor: const Color(0xFF38BDF8),
-          unselectedItemColor: const Color(0xFF64748B),
-          selectedLabelStyle: GoogleFonts.inter(fontSize: 11, fontWeight: FontWeight.w600),
-          unselectedLabelStyle: GoogleFonts.inter(fontSize: 11, fontWeight: FontWeight.w500),
-          type: BottomNavigationBarType.fixed,
-          elevation: 0,
-          items: const [
-            BottomNavigationBarItem(
-              icon: Icon(Icons.home_outlined),
-              activeIcon: Icon(Icons.home_rounded),
-              label: 'Home',
-            ),
-            BottomNavigationBarItem(
-              icon: Icon(Icons.camera_alt_outlined),
-              activeIcon: Icon(Icons.camera_alt_rounded),
-              label: 'Capture',
-            ),
-            BottomNavigationBarItem(
-              icon: Icon(Icons.grid_view_rounded),
-              activeIcon: Icon(Icons.grid_view_rounded),
-              label: 'Evidence',
-            ),
-            BottomNavigationBarItem(
-              icon: Icon(Icons.group_outlined),
-              activeIcon: Icon(Icons.group_rounded),
-              label: 'Users',
-            ),
-            BottomNavigationBarItem(
-              icon: Icon(Icons.person_outline_rounded),
-              activeIcon: Icon(Icons.person_rounded),
-              label: 'Profile',
-            ),
-          ],
+          child: BottomNavigationBar(
+            currentIndex: _currentIndex,
+            onTap: _onTabTapped,
+            backgroundColor: const Color(0xFF060B14),
+            selectedItemColor: const Color(0xFF38BDF8),
+            unselectedItemColor: const Color(0xFF64748B),
+            selectedLabelStyle: GoogleFonts.inter(fontSize: 11, fontWeight: FontWeight.w600),
+            unselectedLabelStyle: GoogleFonts.inter(fontSize: 11, fontWeight: FontWeight.w500),
+            type: BottomNavigationBarType.fixed,
+            elevation: 0,
+            items: const [
+              BottomNavigationBarItem(
+                icon: Icon(Icons.home_outlined),
+                activeIcon: Icon(Icons.home_rounded),
+                label: 'Home',
+              ),
+              BottomNavigationBarItem(
+                icon: Icon(Icons.camera_alt_outlined),
+                activeIcon: Icon(Icons.camera_alt_rounded),
+                label: 'Capture',
+              ),
+              BottomNavigationBarItem(
+                icon: Icon(Icons.grid_view_rounded),
+                activeIcon: Icon(Icons.grid_view_rounded),
+                label: 'Evidence',
+              ),
+              BottomNavigationBarItem(
+                icon: Icon(Icons.group_outlined),
+                activeIcon: Icon(Icons.group_rounded),
+                label: 'Users',
+              ),
+              BottomNavigationBarItem(
+                icon: Icon(Icons.person_outline_rounded),
+                activeIcon: Icon(Icons.person_rounded),
+                label: 'Profile',
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -242,57 +244,31 @@ class _OfficerDashboardState extends State<OfficerDashboard> {
 
                   const SizedBox(height: 18),
 
-                  // Dual Action Buttons
-                  Row(
-                    children: [
-                      Expanded(
-                        child: SizedBox(
-                          height: 42,
-                          child: ElevatedButton(
-                            onPressed: () => _onTabTapped(1),
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: const Color(0xFF2563EB),
-                              foregroundColor: Colors.white,
-                              elevation: 0,
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(10),
-                              ),
-                            ),
-                            child: Text(
-                              'Capture Evidence',
-                              style: GoogleFonts.inter(
-                                fontSize: 13.5,
-                                fontWeight: FontWeight.w700,
-                              ),
-                            ),
-                          ),
+                  // Single Action Button
+                  SizedBox(
+                    width: double.infinity,
+                    height: 44,
+                    child: OutlinedButton(
+                      onPressed: () => _onTabTapped(2),
+                      style: OutlinedButton.styleFrom(
+                        backgroundColor: const Color(0xFF0F1E36),
+                        side: const BorderSide(color: Color(0xFF1E3A5F)),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(10),
                         ),
                       ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: SizedBox(
-                          height: 42,
-                          child: OutlinedButton(
-                            onPressed: () => _onTabTapped(2),
-                            style: OutlinedButton.styleFrom(
-                              backgroundColor: const Color(0xFF0F1E36),
-                              side: const BorderSide(color: Color(0xFF1E3A5F)),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(10),
-                              ),
-                            ),
-                            child: Text(
-                              'View All',
-                              style: GoogleFonts.inter(
-                                color: Colors.white,
-                                fontSize: 13.5,
-                                fontWeight: FontWeight.w700,
-                              ),
-                            ),
-                          ),
+                      child: Text(
+                        'View All Evidence',
+                        style: GoogleFonts.inter(
+                          color: Colors.white,
+                          fontSize: 14,
+                          fontWeight: FontWeight.w700,
                         ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        softWrap: false,
                       ),
-                    ],
+                    ),
                   ),
                 ],
               ),
@@ -394,7 +370,7 @@ class _OfficerDashboardState extends State<OfficerDashboard> {
 
             // Section: Security Status Card
             Container(
-              padding: const EdgeInsets.all(18),
+              padding: const EdgeInsets.all(14),
               decoration: BoxDecoration(
                 color: const Color(0xFF0B1322),
                 borderRadius: BorderRadius.circular(16),
@@ -407,18 +383,15 @@ class _OfficerDashboardState extends State<OfficerDashboard> {
                     'Security Status',
                     style: GoogleFonts.inter(
                       color: Colors.white,
-                      fontSize: 15,
+                      fontSize: 14,
                       fontWeight: FontWeight.w700,
                     ),
                   ),
-                  const SizedBox(height: 14),
-                  _buildSecurityRow('Encryption Active', 'Active'),
-                  const Divider(color: Color(0xFF1E293B), height: 20),
-                  _buildSecurityRow('Integrity Monitoring', 'Active'),
-                  const Divider(color: Color(0xFF1E293B), height: 20),
-                  _buildSecurityRow('Cloud Connected', 'Active'),
-                  const Divider(color: Color(0xFF1E293B), height: 20),
-                  _buildSecurityRow('Database Connected', 'Active'),
+                  const SizedBox(height: 10),
+                  _buildSecurityRow('Encryption', 'Active', const Color(0xFF10B981)),
+                  _buildSecurityRow('Integrity', 'Verified', const Color(0xFF10B981)),
+                  _buildSecurityRow('Cloud Sync', 'Connected', const Color(0xFF10B981)),
+                  _buildSecurityRow('Database', 'Connected', const Color(0xFF10B981)),
                 ],
               ),
             ),
@@ -507,40 +480,40 @@ class _OfficerDashboardState extends State<OfficerDashboard> {
     );
   }
 
-  Widget _buildSecurityRow(String label, String status) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: [
-        Text(
-          label,
-          style: GoogleFonts.inter(
-            color: Colors.white,
-            fontSize: 13.5,
-            fontWeight: FontWeight.w500,
+  Widget _buildSecurityRow(String label, String status, Color color) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 6),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Row(
+            children: [
+              Container(
+                width: 6,
+                height: 6,
+                decoration: BoxDecoration(shape: BoxShape.circle, color: color),
+              ),
+              const SizedBox(width: 8),
+              Text(
+                label,
+                style: GoogleFonts.inter(
+                  color: Colors.white,
+                  fontSize: 13,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ],
           ),
-        ),
-        Row(
-          children: [
-            Container(
-              width: 6,
-              height: 6,
-              decoration: const BoxDecoration(
-                shape: BoxShape.circle,
-                color: Color(0xFF10B981),
-              ),
+          Text(
+            status,
+            style: GoogleFonts.inter(
+              color: color,
+              fontSize: 12.5,
+              fontWeight: FontWeight.w600,
             ),
-            const SizedBox(width: 6),
-            Text(
-              status,
-              style: GoogleFonts.inter(
-                color: const Color(0xFF10B981),
-                fontSize: 12,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-          ],
-        ),
-      ],
+          ),
+        ],
+      ),
     );
   }
 }

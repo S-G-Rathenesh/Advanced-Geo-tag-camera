@@ -6,7 +6,6 @@ import 'core/constants/app_theme.dart';
 
 import 'features/authentication/login_screen.dart';
 import 'features/authentication/splash_screen.dart';
-import 'features/camera/capture_confirmation_screen.dart';
 import 'features/camera/secure_camera_screen.dart';
 import 'features/dashboard/role_router.dart';
 import 'features/evidence/evidence_details_screen.dart';
@@ -48,8 +47,6 @@ class CapturovertApp extends StatelessWidget {
           AppRoutes.login: (_) => const LoginScreen(),
           AppRoutes.dashboard: (_) => const RoleRouter(),
           AppRoutes.secureCamera: (_) => const SecureCameraScreen(),
-          AppRoutes.captureConfirmation: (_) =>
-              const CaptureConfirmationScreen(),
           AppRoutes.syncStatus: (_) => const SyncStatusScreen(),
           AppRoutes.myEvidence: (_) => const MyEvidenceScreen(),
           AppRoutes.evidenceDetails: (_) => const EvidenceDetailsScreen(),

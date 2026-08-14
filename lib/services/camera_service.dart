@@ -19,6 +19,8 @@ class CameraService {
   CameraController? get controller => _controller;
   bool get isInitialized => _isInitialized;
   List<CameraDescription> get cameras => _cameras;
+  FlashMode get currentFlashMode => _controller?.value.flashMode ?? FlashMode.off;
+  bool get hasMultipleCameras => _cameras.length > 1;
 
   // ── Lifecycle ─────────────────────────────────────────────────────────
 
@@ -57,6 +59,12 @@ class CameraService {
     );
 
     await _controller!.initialize();
+    
+    // Default flash to off upon initialization for stealth/security
+    try {
+      await _controller!.setFlashMode(FlashMode.off);
+    } catch (_) {}
+
     _isInitialized = true;
   }
 
@@ -96,33 +104,48 @@ class CameraService {
   /// Switch between front and rear cameras.
   Future<void> switchCamera() async {
     if (_cameras.length < 2) return;
+    if (_controller == null) return;
 
-    final currentDirection = _controller?.description.lensDirection;
+    final currentDirection = _controller!.description.lensDirection;
     final newCamera = _cameras.firstWhere(
       (c) => c.lensDirection != currentDirection,
       orElse: () => _cameras.first,
     );
 
-    await dispose();
+    _isInitialized = false;
+    await _controller?.dispose();
+    
     await initialize(camera: newCamera);
   }
 
-  /// Toggle flash mode.
+  /// Toggle flash mode (OFF -> AUTO -> TORCH -> OFF).
   Future<void> toggleFlash() async {
-    if (_controller == null) return;
+    if (_controller == null || !_isInitialized) return;
 
-    final modes = [FlashMode.off, FlashMode.auto, FlashMode.torch];
-    int currentIndex = modes.indexOf(_controller!.value.flashMode);
-    
-    // Try setting the next modes until one succeeds
-    for (int i = 1; i <= modes.length; i++) {
-      final nextMode = modes[(currentIndex + i) % modes.length];
+    final currentMode = _controller!.value.flashMode;
+    FlashMode nextMode;
+
+    switch (currentMode) {
+      case FlashMode.off:
+        nextMode = FlashMode.auto;
+        break;
+      case FlashMode.auto:
+        nextMode = FlashMode.torch;
+        break;
+      case FlashMode.torch:
+      case FlashMode.always:
+        nextMode = FlashMode.off;
+        break;
+    }
+
+    try {
+      await _controller!.setFlashMode(nextMode);
+    } catch (e) {
+      debugPrint('Flash mode $nextMode not supported: $e');
+      // If auto/torch fails, fallback to off safely
       try {
-        await _controller!.setFlashMode(nextMode);
-        return; // Success, stop trying
-      } catch (e) {
-        debugPrint('Flash mode $nextMode not supported: $e');
-      }
+        await _controller!.setFlashMode(FlashMode.off);
+      } catch (_) {}
     }
   }
 

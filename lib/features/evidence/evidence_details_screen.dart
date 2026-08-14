@@ -1,15 +1,19 @@
 import 'dart:io';
-
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
+import 'package:path_provider/path_provider.dart';
+import 'package:http/http.dart' as http;
 
 import '../../core/constants/app_routes.dart';
 import '../../models/evidence_record.dart';
 import '../../models/sync_status.dart';
 import '../../services/evidence_service.dart';
+import '../../services/api_service.dart';
+import '../../services/auth_service.dart';
+import '../../models/user_model.dart';
 
 class EvidenceDetailsScreen extends StatefulWidget {
   const EvidenceDetailsScreen({super.key});
@@ -21,6 +25,9 @@ class EvidenceDetailsScreen extends StatefulWidget {
 class _EvidenceDetailsScreenState extends State<EvidenceDetailsScreen> {
   EvidenceRecord? _record;
   bool _isLoading = true;
+  bool _isDownloading = false;
+  bool _isVerified = false;
+  bool _isVerifying = true;
 
   @override
   void didChangeDependencies() {
@@ -36,6 +43,7 @@ class _EvidenceDetailsScreenState extends State<EvidenceDetailsScreen> {
         _record = args;
         _isLoading = false;
       });
+      _triggerAuditAndVerify(args.captureId);
       return;
     }
 
@@ -47,11 +55,104 @@ class _EvidenceDetailsScreenState extends State<EvidenceDetailsScreen> {
           _record = record;
           _isLoading = false;
         });
+        _triggerAuditAndVerify(args);
       }
       return;
     }
 
     setState(() => _isLoading = false);
+  }
+
+  Future<void> _triggerAuditAndVerify(String captureId) async {
+    final apiService = context.read<ApiService>();
+    try {
+      await apiService.getEvidence(captureId);
+    } catch (_) {}
+    try {
+      final verifyRes = await apiService.verifyEvidence(captureId);
+      if (mounted) {
+        setState(() {
+          _isVerified = verifyRes['hash_match'] == true;
+          _isVerifying = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _isVerified = false;
+          _isVerifying = false;
+        });
+      }
+    }
+  }
+
+  Future<void> _downloadImage() async {
+    if (_record == null || !_record!.imagePath.startsWith('http')) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Image unavailable')));
+      return;
+    }
+    setState(() => _isDownloading = true);
+    try {
+      final response = await http.get(Uri.parse(_record!.imagePath));
+      if (response.statusCode == 200) {
+        Directory? dir;
+        if (Platform.isAndroid) {
+          dir = Directory('/storage/emulated/0/Download');
+          if (!dir.existsSync()) dir = await getExternalStorageDirectory();
+        } else {
+          dir = await getApplicationDocumentsDirectory();
+        }
+        if (dir != null) {
+          final file = File('/GeoEvidence_.jpg');
+          await file.writeAsBytes(response.bodyBytes);
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+              content: Text('Image downloaded successfully'),
+              backgroundColor: Color(0xFF10B981),
+            ));
+          }
+        }
+      } else {
+        throw Exception('Download failed');
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+          content: Text('Download failed. Please try again.'),
+          backgroundColor: Color(0xFFEF4444),
+        ));
+      }
+    } finally {
+      if (mounted) setState(() => _isDownloading = false);
+    }
+  }
+
+  void _openImageViewer() {
+    if (_record == null) return;
+    Navigator.of(context).push(MaterialPageRoute(
+      builder: (context) => Scaffold(
+        backgroundColor: Colors.black,
+        appBar: AppBar(
+          backgroundColor: Colors.transparent,
+          elevation: 0,
+          leading: IconButton(
+            icon: const Icon(Icons.close, color: Colors.white),
+            onPressed: () => Navigator.pop(context),
+          ),
+        ),
+        body: Center(
+          child: InteractiveViewer(
+            panEnabled: true,
+            minScale: 0.5,
+            maxScale: 4,
+            child: Hero(
+              tag: 'evidence_image_',
+              child: _buildEvidenceImage(_record!.imagePath),
+            ),
+          ),
+        ),
+      ),
+    ));
   }
 
   void _copyToClipboard(String text) {
@@ -171,6 +272,32 @@ class _EvidenceDetailsScreenState extends State<EvidenceDetailsScreen> {
             backgroundColor: const Color(0xFF060B14),
             expandedHeight: MediaQuery.of(context).size.height * 0.40,
             pinned: true,
+            actions: [
+              if (context.watch<AuthService>().currentUser?.role == UserRole.officer)
+                Padding(
+                  padding: const EdgeInsets.all(8.0),
+                  child: _isDownloading
+                      ? const Center(
+                          child: SizedBox(
+                            width: 24,
+                            height: 24,
+                            child: CircularProgressIndicator(color: Color(0xFF38BDF8), strokeWidth: 2),
+                          ),
+                        )
+                      : Container(
+                          decoration: BoxDecoration(
+                            color: const Color(0xFF060B14).withOpacity(0.7),
+                            borderRadius: BorderRadius.circular(8),
+                            border: Border.all(color: const Color(0xFF1E293B)),
+                          ),
+                          child: IconButton(
+                            icon: const Icon(Icons.download_rounded, color: Colors.white, size: 20),
+                            onPressed: _downloadImage,
+                            tooltip: 'Download Image',
+                          ),
+                        ),
+                ),
+            ],
             leading: Padding(
               padding: const EdgeInsets.all(8.0),
               child: GestureDetector(
@@ -190,7 +317,13 @@ class _EvidenceDetailsScreenState extends State<EvidenceDetailsScreen> {
               ),
             ),
             flexibleSpace: FlexibleSpaceBar(
-              background: _buildEvidenceImage(record.imagePath),
+              background: GestureDetector(
+                onTap: _openImageViewer,
+                child: Hero(
+                  tag: 'evidence_image_',
+                  child: _buildEvidenceImage(record.imagePath),
+                ),
+              ),
             ),
           ),
           SliverToBoxAdapter(
@@ -362,6 +495,20 @@ class _EvidenceDetailsScreenState extends State<EvidenceDetailsScreen> {
                     ),
                     const SizedBox(height: 12),
                     _buildMetaRow('Encryption', 'AES-256-GCM', isMonospace: true, highlightColor: const Color(0xFF10B981)),
+                    const SizedBox(height: 12),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text('Integrity Verification', style: GoogleFonts.inter(color: const Color(0xFF8E9EB5), fontSize: 13, fontWeight: FontWeight.w500)),
+                        _isVerifying
+                            ? const SizedBox(width: 14, height: 14, child: CircularProgressIndicator(strokeWidth: 2, color: Color(0xFF8E9EB5)))
+                            : _buildBadge(
+                                _isVerified ? Icons.check_circle_rounded : Icons.error_rounded,
+                                _isVerified ? 'VERIFIED' : 'VERIFICATION FAILED',
+                                _isVerified ? const Color(0xFF10B981) : const Color(0xFFEF4444),
+                              ),
+                      ],
+                    ),
                     
                     const SizedBox(height: 24),
                     const Divider(color: Color(0xFF1E293B), height: 1),

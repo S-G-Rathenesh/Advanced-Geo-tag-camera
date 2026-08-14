@@ -395,6 +395,8 @@ class _UserManagementScreenState extends State<UserManagementScreen> {
                         color: const Color(0xFF8E9EB5),
                         fontSize: 12.5,
                       ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                     ),
                     const SizedBox(height: 4),
                     Row(

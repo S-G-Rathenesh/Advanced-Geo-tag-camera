@@ -54,52 +54,54 @@ class _SupervisorDashboardState extends State<SupervisorDashboard> {
         index: _currentIndex,
         children: pages,
       ),
-      bottomNavigationBar: Container(
-        decoration: const BoxDecoration(
-          color: Color(0xFF060B14),
-          border: Border(
-            top: BorderSide(color: Color(0xFF1E293B), width: 1),
+      bottomNavigationBar: SafeArea(
+        child: Container(
+          decoration: const BoxDecoration(
+            color: Color(0xFF060B14),
+            border: Border(
+              top: BorderSide(color: Color(0xFF1E293B), width: 1),
+            ),
           ),
-        ),
-        child: BottomNavigationBar(
-          currentIndex: _currentIndex,
-          onTap: _onTabTapped,
-          backgroundColor: const Color(0xFF060B14),
-          selectedItemColor: const Color(0xFF38BDF8),
-          unselectedItemColor: const Color(0xFF64748B),
-          selectedLabelStyle: GoogleFonts.inter(
-              fontSize: 10.5, fontWeight: FontWeight.w600),
-          unselectedLabelStyle: GoogleFonts.inter(
-              fontSize: 10.5, fontWeight: FontWeight.w500),
-          type: BottomNavigationBarType.fixed,
-          elevation: 0,
-          items: const [
-            BottomNavigationBarItem(
-              icon: Icon(Icons.home_outlined, size: 22),
-              activeIcon: Icon(Icons.home_rounded, size: 22),
-              label: 'Home',
-            ),
-            BottomNavigationBarItem(
-              icon: Icon(Icons.camera_alt_outlined, size: 22),
-              activeIcon: Icon(Icons.camera_alt_rounded, size: 22),
-              label: 'Capture',
-            ),
-            BottomNavigationBarItem(
-              icon: Icon(Icons.grid_view_rounded, size: 22),
-              activeIcon: Icon(Icons.grid_view_rounded, size: 22),
-              label: 'Evidence',
-            ),
-            BottomNavigationBarItem(
-              icon: Icon(Icons.group_outlined, size: 22),
-              activeIcon: Icon(Icons.group_rounded, size: 22),
-              label: 'Team',
-            ),
-            BottomNavigationBarItem(
-              icon: Icon(Icons.person_outline_rounded, size: 22),
-              activeIcon: Icon(Icons.person_rounded, size: 22),
-              label: 'Profile',
-            ),
-          ],
+          child: BottomNavigationBar(
+            currentIndex: _currentIndex,
+            onTap: _onTabTapped,
+            backgroundColor: const Color(0xFF060B14),
+            selectedItemColor: const Color(0xFF38BDF8),
+            unselectedItemColor: const Color(0xFF64748B),
+            selectedLabelStyle: GoogleFonts.inter(
+                fontSize: 10.5, fontWeight: FontWeight.w600),
+            unselectedLabelStyle: GoogleFonts.inter(
+                fontSize: 10.5, fontWeight: FontWeight.w500),
+            type: BottomNavigationBarType.fixed,
+            elevation: 0,
+            items: const [
+              BottomNavigationBarItem(
+                icon: Icon(Icons.home_outlined, size: 22),
+                activeIcon: Icon(Icons.home_rounded, size: 22),
+                label: 'Home',
+              ),
+              BottomNavigationBarItem(
+                icon: Icon(Icons.camera_alt_outlined, size: 22),
+                activeIcon: Icon(Icons.camera_alt_rounded, size: 22),
+                label: 'Capture',
+              ),
+              BottomNavigationBarItem(
+                icon: Icon(Icons.grid_view_rounded, size: 22),
+                activeIcon: Icon(Icons.grid_view_rounded, size: 22),
+                label: 'Evidence',
+              ),
+              BottomNavigationBarItem(
+                icon: Icon(Icons.group_outlined, size: 22),
+                activeIcon: Icon(Icons.group_rounded, size: 22),
+                label: 'Team',
+              ),
+              BottomNavigationBarItem(
+                icon: Icon(Icons.person_outline_rounded, size: 22),
+                activeIcon: Icon(Icons.person_rounded, size: 22),
+                label: 'Profile',
+              ),
+            ],
+          ),
         ),
       ),
     );

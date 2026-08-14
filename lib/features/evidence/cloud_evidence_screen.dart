@@ -351,7 +351,7 @@ class _CloudEvidenceScreenState extends State<CloudEvidenceScreen> {
   Widget _buildEvidenceCard(EvidenceRecord evidence, String ownerName, String role) {
     final initials = ownerName.isNotEmpty
         ? ownerName.split(' ').map((e) => e.isNotEmpty ? e[0] : '').take(2).join().toUpperCase()
-        : 'JH';
+        : 'U';
 
     return GestureDetector(
       onTap: () {
@@ -378,7 +378,17 @@ class _CloudEvidenceScreenState extends State<CloudEvidenceScreen> {
                   height: 170,
                   width: double.infinity,
                   color: const Color(0xFF070E1B),
-                  child: _buildPlaceholderImage(),
+                  child: evidence.imagePath.startsWith('http')
+                      ? Image.network(
+                          evidence.imagePath,
+                          fit: BoxFit.cover,
+                          errorBuilder: (context, error, stackTrace) => _buildPlaceholderImage(),
+                          loadingBuilder: (context, child, loadingProgress) {
+                            if (loadingProgress == null) return child;
+                            return const Center(child: CircularProgressIndicator(color: Color(0xFF38BDF8)));
+                          },
+                        )
+                      : _buildPlaceholderImage(),
                 ),
 
                 // Top Left ID Badge
@@ -455,6 +465,7 @@ class _CloudEvidenceScreenState extends State<CloudEvidenceScreen> {
                           ),
                         ),
                       ),
+                      const SizedBox(width: 8),
                       Flexible(
                         child: Text(
                           ownerName,
@@ -493,11 +504,15 @@ class _CloudEvidenceScreenState extends State<CloudEvidenceScreen> {
                     children: [
                       const Icon(Icons.location_on_outlined, size: 15, color: Color(0xFF8E9EB5)),
                       const SizedBox(width: 4),
-                      Text(
-                        evidence.address ?? 'Bengaluru, India',
-                        style: GoogleFonts.inter(
-                          color: const Color(0xFF8E9EB5),
-                          fontSize: 12.5,
+                      Expanded(
+                        child: Text(
+                          evidence.address ?? 'Bengaluru, India',
+                          style: GoogleFonts.inter(
+                            color: const Color(0xFF8E9EB5),
+                            fontSize: 12.5,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
                         ),
                       ),
                     ],

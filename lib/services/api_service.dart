@@ -104,6 +104,32 @@ class ApiService {
     }
   }
 
+  Future<EvidenceRecord> getEvidence(String captureId) async {
+    final url = Uri.parse('${AppConstants.apiBaseUrl}/evidence/$captureId');
+    debugPrint('[API] GET /evidence/$captureId');
+    final response = await http.get(url, headers: await _getHeaders());
+    debugPrint('[API] GET /evidence/$captureId -> ${response.statusCode}');
+
+    if (response.statusCode == 200) {
+      return _parseCloudEvidence(jsonDecode(response.body));
+    } else {
+      throw Exception('Failed to get evidence: ${response.statusCode}');
+    }
+  }
+
+  Future<Map<String, dynamic>> verifyEvidence(String captureId) async {
+    final url = Uri.parse('${AppConstants.apiBaseUrl}/evidence/$captureId/verify');
+    debugPrint('[API] POST /evidence/$captureId/verify');
+    final response = await http.post(url, headers: await _getHeaders());
+    debugPrint('[API] POST /evidence/$captureId/verify -> ${response.statusCode}');
+
+    if (response.statusCode == 200) {
+      return jsonDecode(response.body);
+    } else {
+      throw Exception('Failed to verify evidence: ${response.statusCode}');
+    }
+  }
+
   EvidenceRecord _parseCloudEvidence(Map<String, dynamic> json) {
     return EvidenceRecord(
       captureId: json['capture_id'],
@@ -114,6 +140,7 @@ class ApiService {
       longitude: (json['longitude'] as num).toDouble(),
       altitude: json['altitude'] != null ? (json['altitude'] as num).toDouble() : null,
       accuracy: (json['gps_accuracy'] as num).toDouble(),
+      address: json['address'],
       timestamp: DateTime.parse(json['capture_timestamp']),
       sha256Hash: json['sha256_hash'],
       syncStatus: SyncStatus.synced,
