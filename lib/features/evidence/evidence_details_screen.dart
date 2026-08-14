@@ -11,7 +11,6 @@ import '../../models/evidence_record.dart';
 import '../../models/sync_status.dart';
 import '../../services/evidence_service.dart';
 
-/// Pixel-perfect Evidence Details Screen matching the tactical mobile UI design.
 class EvidenceDetailsScreen extends StatefulWidget {
   const EvidenceDetailsScreen({super.key});
 
@@ -60,7 +59,7 @@ class _EvidenceDetailsScreenState extends State<EvidenceDetailsScreen> {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(
-          'SHA-256 hash copied to clipboard',
+          'Copied to clipboard',
           style: GoogleFonts.inter(fontSize: 13),
         ),
         backgroundColor: const Color(0xFF1E3A8A),
@@ -72,23 +71,34 @@ class _EvidenceDetailsScreenState extends State<EvidenceDetailsScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final record = _record ??
-        EvidenceRecord(
-          captureId: 'ev-001',
-          userId: 'user_officer_1',
-          deviceId: 'DEV-A8F2-9C14',
-          imagePath: '',
-          latitude: 12.9716,
-          longitude: 77.5946,
-          accuracy: 12.0,
-          address: 'Koramangala, Bengaluru',
-          timestamp: DateTime(2026, 8, 14, 10, 42),
-          sha256Hash:
-              'a3f7d2e1b8c94012f56e9871bc320145fa890123456789abcdef01234567890ab',
-          syncStatus: SyncStatus.synced,
-          createdAt: DateTime(2026, 8, 14, 10, 42),
-          updatedAt: DateTime(2026, 8, 14, 10, 42),
-        );
+    if (_isLoading) {
+      return const Scaffold(
+        backgroundColor: Color(0xFF060B14),
+        body: Center(child: CircularProgressIndicator(color: Color(0xFF38BDF8))),
+      );
+    }
+
+    if (_record == null) {
+      return Scaffold(
+        backgroundColor: const Color(0xFF060B14),
+        appBar: AppBar(
+          backgroundColor: Colors.transparent,
+          elevation: 0,
+          leading: IconButton(
+            icon: const Icon(Icons.arrow_back, color: Colors.white),
+            onPressed: () => Navigator.pop(context),
+          ),
+        ),
+        body: Center(
+          child: Text(
+            'Evidence record not found',
+            style: GoogleFonts.inter(color: Colors.white),
+          ),
+        ),
+      );
+    }
+
+    final record = _record!;
 
     final displayHash = record.sha256Hash.length > 28
         ? '${record.sha256Hash.substring(0, 18)}...${record.sha256Hash.substring(record.sha256Hash.length - 8)}'
@@ -100,136 +110,90 @@ class _EvidenceDetailsScreenState extends State<EvidenceDetailsScreen> {
         '${record.longitude.abs().toStringAsFixed(4)}° ${record.longitude >= 0 ? "E" : "W"}';
     final coords = '$latFormatted  $lonFormatted';
 
-    final mediaQuery = MediaQuery.of(context);
-    final topPadding = mediaQuery.padding.top;
-    final screenHeight = mediaQuery.size.height;
-
     return Scaffold(
       backgroundColor: const Color(0xFF060B14),
-      body: Stack(
-        children: [
-          // 1. Top Photographic Background View (occupies ~42% of screen height)
-          Positioned(
-            top: 0,
-            left: 0,
-            right: 0,
-            height: screenHeight * 0.44,
-            child: _buildEvidenceImage(record.imagePath),
+      bottomNavigationBar: Container(
+        decoration: const BoxDecoration(
+          color: Color(0xFF060B14),
+          border: Border(
+            top: BorderSide(color: Color(0xFF1E293B), width: 1),
           ),
-
-          // 2. Floating Top Header: Back Button & Badges
-          Positioned(
-            top: topPadding + 8,
-            left: 16,
-            right: 16,
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // < Back Button
-                GestureDetector(
-                  onTap: () => Navigator.pop(context),
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 12, vertical: 6),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFF060B14).withAlpha(210),
-                      borderRadius: BorderRadius.circular(8),
-                      border: Border.all(color: const Color(0xFF1E293B)),
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        const Icon(
-                          Icons.chevron_left_rounded,
-                          color: Colors.white,
-                          size: 18,
-                        ),
-                        const SizedBox(width: 2),
-                        Text(
-                          'Back',
-                          style: GoogleFonts.inter(
-                            color: Colors.white,
-                            fontSize: 13,
-                            fontWeight: FontWeight.w700,
-                          ),
-                        ),
-                      ],
-                    ),
+        ),
+        child: SafeArea(
+          child: BottomNavigationBar(
+            currentIndex: 2, // Evidence tab active
+            onTap: (index) {
+              if (index == 0) {
+                Navigator.pushReplacementNamed(context, AppRoutes.dashboard);
+              } else if (index == 1) {
+                Navigator.pushNamed(context, AppRoutes.secureCamera);
+              } else if (index == 2) {
+                Navigator.pop(context);
+              }
+            },
+            backgroundColor: const Color(0xFF060B14),
+            selectedItemColor: const Color(0xFF38BDF8),
+            unselectedItemColor: const Color(0xFF64748B),
+            selectedLabelStyle: GoogleFonts.inter(
+                fontSize: 10.5, fontWeight: FontWeight.w600),
+            unselectedLabelStyle: GoogleFonts.inter(
+                fontSize: 10.5, fontWeight: FontWeight.w500),
+            type: BottomNavigationBarType.fixed,
+            elevation: 0,
+            items: const [
+              BottomNavigationBarItem(
+                icon: Icon(Icons.home_outlined, size: 22),
+                label: 'Home',
+              ),
+              BottomNavigationBarItem(
+                icon: Icon(Icons.camera_alt_outlined, size: 22),
+                label: 'Capture',
+              ),
+              BottomNavigationBarItem(
+                icon: Icon(Icons.grid_view_rounded, size: 22),
+                label: 'Evidence',
+              ),
+              BottomNavigationBarItem(
+                icon: Icon(Icons.group_outlined, size: 22),
+                label: 'Users',
+              ),
+              BottomNavigationBarItem(
+                icon: Icon(Icons.person_outline_rounded, size: 22),
+                label: 'Profile',
+              ),
+            ],
+          ),
+        ),
+      ),
+      body: CustomScrollView(
+        slivers: [
+          SliverAppBar(
+            backgroundColor: const Color(0xFF060B14),
+            expandedHeight: MediaQuery.of(context).size.height * 0.40,
+            pinned: true,
+            leading: Padding(
+              padding: const EdgeInsets.all(8.0),
+              child: GestureDetector(
+                onTap: () => Navigator.pop(context),
+                child: Container(
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF060B14).withOpacity(0.7),
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(color: const Color(0xFF1E293B)),
+                  ),
+                  child: const Icon(
+                    Icons.chevron_left_rounded,
+                    color: Colors.white,
+                    size: 24,
                   ),
                 ),
-
-                // Top Right Badges (Integrity Verified + Synced)
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.end,
-                  children: [
-                    // Integrity Verified Badge
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 10, vertical: 5),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFF052E16).withAlpha(230),
-                        borderRadius: BorderRadius.circular(6),
-                        border: Border.all(color: const Color(0xFF10B981)),
-                      ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          const Icon(Icons.check,
-                              size: 12, color: Color(0xFF10B981)),
-                          const SizedBox(width: 4),
-                          Text(
-                            'Integrity Verified',
-                            style: GoogleFonts.inter(
-                              color: const Color(0xFF10B981),
-                              fontSize: 10.5,
-                              fontWeight: FontWeight.w800,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-
-                    const SizedBox(height: 6),
-
-                    // Synced Badge
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 10, vertical: 4),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFF064E3B).withAlpha(230),
-                        borderRadius: BorderRadius.circular(6),
-                        border: Border.all(color: const Color(0xFF10B981)),
-                      ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          const Icon(Icons.cloud_done_rounded,
-                              size: 12, color: Color(0xFF10B981)),
-                          const SizedBox(width: 5),
-                          Text(
-                            'Synced',
-                            style: GoogleFonts.inter(
-                              color: const Color(0xFF10B981),
-                              fontSize: 10.5,
-                              fontWeight: FontWeight.w700,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-              ],
+              ),
+            ),
+            flexibleSpace: FlexibleSpaceBar(
+              background: _buildEvidenceImage(record.imagePath),
             ),
           ),
-
-          // 3. Bottom Sheet Overlay Card (starts around 40% height)
-          Positioned(
-            top: screenHeight * 0.40,
-            left: 0,
-            right: 0,
-            bottom: 56, // Space for bottom navigation bar
+          SliverToBoxAdapter(
             child: Container(
               decoration: BoxDecoration(
                 color: const Color(0xFF0B1322),
@@ -238,101 +202,111 @@ class _EvidenceDetailsScreenState extends State<EvidenceDetailsScreen> {
                 border: Border.all(color: const Color(0xFF1E293B)),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withAlpha(160),
+                    color: Colors.black.withOpacity(0.6),
                     blurRadius: 16,
                     offset: const Offset(0, -4),
                   ),
                 ],
               ),
-              child: SingleChildScrollView(
-                padding: const EdgeInsets.fromLTRB(20, 12, 20, 20),
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(20, 20, 20, 40),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // Drag Handle
-                    Center(
-                      child: Container(
-                        width: 36,
-                        height: 3.5,
-                        decoration: BoxDecoration(
-                          color: const Color(0xFF334155),
-                          borderRadius: BorderRadius.circular(2),
-                        ),
-                      ),
-                    ),
-
-                    const SizedBox(height: 14),
-
-                    // Header Row: Officer Name & Role Badge
+                    // IDENTIFICATION SECTION
                     Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Flexible(
-                          child: Text(
-                            'James Harrington',
-                            style: GoogleFonts.inter(
-                              color: Colors.white,
-                              fontSize: 19,
-                              fontWeight: FontWeight.w800,
-                              letterSpacing: -0.4,
-                            ),
-                            overflow: TextOverflow.ellipsis,
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'IDENTIFICATION',
+                                style: GoogleFonts.inter(
+                                  color: const Color(0xFF64748B),
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.w700,
+                                  letterSpacing: 1.2,
+                                ),
+                              ),
+                              const SizedBox(height: 8),
+                              _buildCopyableRow('Capture ID', record.captureId),
+                              _buildCopyableRow('User ID (Owner)', record.userId),
+                              _buildCopyableRow('Device ID', record.deviceId),
+                            ],
                           ),
                         ),
-                        const SizedBox(width: 10),
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 8, vertical: 3.5),
-                          decoration: BoxDecoration(
-                            color: const Color(0xFF1E3A8A),
-                            borderRadius: BorderRadius.circular(6),
-                          ),
-                          child: Text(
-                            'OFFICER',
-                            style: GoogleFonts.inter(
-                              color: const Color(0xFF60A5FA),
-                              fontSize: 10.5,
-                              fontWeight: FontWeight.w800,
-                              letterSpacing: 0.5,
-                            ),
-                          ),
+                        // Top Right Badges (Sync Status)
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.end,
+                          children: [
+                            if (record.syncStatus == SyncStatus.synced)
+                              _buildBadge(Icons.cloud_done, 'Synced', const Color(0xFF10B981))
+                            else if (record.syncStatus == SyncStatus.pending)
+                              _buildBadge(Icons.cloud_upload, 'Pending', const Color(0xFFF59E0B))
+                            else
+                              _buildBadge(Icons.cloud_off, 'Failed', const Color(0xFFEF4444)),
+                          ],
                         ),
                       ],
                     ),
 
-                    const SizedBox(height: 4),
-
-                    // Evidence ID
-                    Text(
-                      record.captureId,
-                      style: GoogleFonts.jetBrainsMono(
-                        color: const Color(0xFF64748B),
-                        fontSize: 11.5,
-                        fontWeight: FontWeight.w600,
-                      ),
-                      overflow: TextOverflow.ellipsis,
-                      maxLines: 1,
-                    ),
-
-                    const SizedBox(height: 14),
+                    const SizedBox(height: 24),
                     const Divider(color: Color(0xFF1E293B), height: 1),
-                    const SizedBox(height: 12),
+                    const SizedBox(height: 24),
 
-                    // Metadata Rows
-                    _buildMetaRow('Location', record.address ?? 'Koramangala, Bengaluru'),
-                    _buildMetaRow('Coordinates', coords),
-                    _buildMetaRow('GPS Accuracy', '±${record.accuracy.toStringAsFixed(0)}m'),
-                    _buildMetaRow('Timestamp', '14 Aug 2026 • 10:42 AM'),
-                    _buildMetaRow(
-                      'Device ID',
-                      record.deviceId.length > 18
-                          ? '${record.deviceId.substring(0, 16)}...'
-                          : record.deviceId,
-                      isMonospace: true,
+                    // LOCATION SECTION
+                    Text(
+                      'LOCATION & METADATA',
+                      style: GoogleFonts.inter(
+                        color: const Color(0xFF64748B),
+                        fontSize: 11,
+                        fontWeight: FontWeight.w700,
+                        letterSpacing: 1.2,
+                      ),
                     ),
+                    const SizedBox(height: 12),
+                    _buildMetaRow('Address', record.address ?? 'Unavailable'),
+                    _buildMetaRow('Coordinates', coords),
+                    _buildMetaRow('Altitude', record.altitude != null ? '${record.altitude!.toStringAsFixed(1)}m' : 'Unavailable'),
+                    _buildMetaRow('GPS Accuracy', '±${record.accuracy.toStringAsFixed(0)}m'),
+                    
+                    const SizedBox(height: 24),
+                    const Divider(color: Color(0xFF1E293B), height: 1),
+                    const SizedBox(height: 24),
 
-                    const SizedBox(height: 16),
+                    // TIMESTAMPS SECTION
+                    Text(
+                      'TIMESTAMPS',
+                      style: GoogleFonts.inter(
+                        color: const Color(0xFF64748B),
+                        fontSize: 11,
+                        fontWeight: FontWeight.w700,
+                        letterSpacing: 1.2,
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    _buildMetaRow('Captured At', DateFormat('dd MMM yyyy • hh:mm:ss a').format(record.timestamp)),
+                    _buildMetaRow('Created At', DateFormat('dd MMM yyyy • hh:mm:ss a').format(record.createdAt)),
+                    _buildMetaRow('Updated At', DateFormat('dd MMM yyyy • hh:mm:ss a').format(record.updatedAt)),
 
-                    // SHA-256 Hash Row + Copy Button
+                    const SizedBox(height: 24),
+                    const Divider(color: Color(0xFF1E293B), height: 1),
+                    const SizedBox(height: 24),
+
+                    // INTEGRITY & SECURITY SECTION
+                    Text(
+                      'INTEGRITY & SECURITY',
+                      style: GoogleFonts.inter(
+                        color: const Color(0xFF64748B),
+                        fontSize: 11,
+                        fontWeight: FontWeight.w700,
+                        letterSpacing: 1.2,
+                      ),
+                    ),
+                    const SizedBox(height: 12),
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
@@ -340,18 +314,18 @@ class _EvidenceDetailsScreenState extends State<EvidenceDetailsScreen> {
                           'SHA-256 Hash',
                           style: GoogleFonts.inter(
                             color: Colors.white,
-                            fontSize: 14,
-                            fontWeight: FontWeight.w700,
+                            fontSize: 13,
+                            fontWeight: FontWeight.w500,
                           ),
                         ),
                         SizedBox(
-                          height: 30,
+                          height: 28,
                           child: OutlinedButton(
                             onPressed: () => _copyToClipboard(record.sha256Hash),
                             style: OutlinedButton.styleFrom(
                               backgroundColor: const Color(0xFF0F1E36),
                               side: const BorderSide(color: Color(0xFF1E3A8A)),
-                              padding: const EdgeInsets.symmetric(horizontal: 14),
+                              padding: const EdgeInsets.symmetric(horizontal: 12),
                               shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(6),
                               ),
@@ -361,17 +335,14 @@ class _EvidenceDetailsScreenState extends State<EvidenceDetailsScreen> {
                               style: GoogleFonts.inter(
                                 color: const Color(0xFF60A5FA),
                                 fontWeight: FontWeight.w700,
-                                fontSize: 12,
+                                fontSize: 11,
                               ),
                             ),
                           ),
                         ),
                       ],
                     ),
-
                     const SizedBox(height: 8),
-
-                    // Dark Inset Hash Display Container
                     Container(
                       width: double.infinity,
                       padding: const EdgeInsets.symmetric(
@@ -389,106 +360,34 @@ class _EvidenceDetailsScreenState extends State<EvidenceDetailsScreen> {
                         ),
                       ),
                     ),
-
-                    const SizedBox(height: 6),
-
-                    // Green Validation Subtitle
+                    const SizedBox(height: 12),
+                    _buildMetaRow('Encryption', 'AES-256-GCM', isMonospace: true, highlightColor: const Color(0xFF10B981)),
+                    
+                    const SizedBox(height: 24),
+                    const Divider(color: Color(0xFF1E293B), height: 1),
+                    const SizedBox(height: 24),
+                    
+                    // AUDIT SECTION
                     Text(
-                      'SHA-256 fingerprint matches the original captured payload.',
+                      'AUDIT LOG',
                       style: GoogleFonts.inter(
-                        color: const Color(0xFF10B981),
+                        color: const Color(0xFF64748B),
                         fontSize: 11,
-                        fontWeight: FontWeight.w500,
+                        fontWeight: FontWeight.w700,
+                        letterSpacing: 1.2,
                       ),
                     ),
-
-                    const SizedBox(height: 14),
-                    const Divider(color: Color(0xFF1E293B), height: 1),
                     const SizedBox(height: 12),
-
-                    // Encryption Spec Row
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Text(
-                          'Encryption',
-                          style: GoogleFonts.inter(
-                            color: const Color(0xFF8E9EB5),
-                            fontSize: 13,
-                            fontWeight: FontWeight.w500,
-                          ),
-                        ),
-                        Text(
-                          'AES-256-GCM',
-                          style: GoogleFonts.jetBrainsMono(
-                            color: const Color(0xFF10B981),
-                            fontSize: 12,
-                            fontWeight: FontWeight.w700,
-                          ),
-                        ),
-                      ],
+                    Text(
+                      'System audit logs are tracked securely on the backend database and restricted to authorized personnel.',
+                      style: GoogleFonts.inter(
+                        color: const Color(0xFF8E9EB5),
+                        fontSize: 12,
+                        fontStyle: FontStyle.italic,
+                      ),
                     ),
                   ],
                 ),
-              ),
-            ),
-          ),
-
-          // 4. Fixed Bottom Navigation Bar
-          Positioned(
-            bottom: 0,
-            left: 0,
-            right: 0,
-            child: Container(
-              height: 56,
-              decoration: const BoxDecoration(
-                color: Color(0xFF060B14),
-                border: Border(
-                  top: BorderSide(color: Color(0xFF1E293B), width: 1),
-                ),
-              ),
-              child: BottomNavigationBar(
-                currentIndex: 2, // Evidence tab active
-                onTap: (index) {
-                  if (index == 0) {
-                    Navigator.pushReplacementNamed(context, AppRoutes.dashboard);
-                  } else if (index == 1) {
-                    Navigator.pushNamed(context, AppRoutes.secureCamera);
-                  } else if (index == 2) {
-                    Navigator.pop(context);
-                  }
-                },
-                backgroundColor: const Color(0xFF060B14),
-                selectedItemColor: const Color(0xFF38BDF8),
-                unselectedItemColor: const Color(0xFF64748B),
-                selectedLabelStyle: GoogleFonts.inter(
-                    fontSize: 10.5, fontWeight: FontWeight.w600),
-                unselectedLabelStyle: GoogleFonts.inter(
-                    fontSize: 10.5, fontWeight: FontWeight.w500),
-                type: BottomNavigationBarType.fixed,
-                elevation: 0,
-                items: const [
-                  BottomNavigationBarItem(
-                    icon: Icon(Icons.home_outlined, size: 22),
-                    label: 'Home',
-                  ),
-                  BottomNavigationBarItem(
-                    icon: Icon(Icons.camera_alt_outlined, size: 22),
-                    label: 'Capture',
-                  ),
-                  BottomNavigationBarItem(
-                    icon: Icon(Icons.grid_view_rounded, size: 22),
-                    label: 'Evidence',
-                  ),
-                  BottomNavigationBarItem(
-                    icon: Icon(Icons.group_outlined, size: 22),
-                    label: 'Users',
-                  ),
-                  BottomNavigationBarItem(
-                    icon: Icon(Icons.person_outline_rounded, size: 22),
-                    label: 'Profile',
-                  ),
-                ],
               ),
             ),
           ),
@@ -497,7 +396,67 @@ class _EvidenceDetailsScreenState extends State<EvidenceDetailsScreen> {
     );
   }
 
-  Widget _buildMetaRow(String label, String value, {bool isMonospace = false}) {
+  Widget _buildBadge(IconData icon, String text, Color color) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      decoration: BoxDecoration(
+        color: color.withOpacity(0.15),
+        borderRadius: BorderRadius.circular(6),
+        border: Border.all(color: color.withOpacity(0.5)),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 12, color: color),
+          const SizedBox(width: 4),
+          Text(
+            text,
+            style: GoogleFonts.inter(
+              color: color,
+              fontSize: 10.5,
+              fontWeight: FontWeight.w800,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildCopyableRow(String label, String value) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 6),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            '$label: ',
+            style: GoogleFonts.inter(
+              color: const Color(0xFF8E9EB5),
+              fontSize: 12,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+          Expanded(
+            child: GestureDetector(
+              onTap: () => _copyToClipboard(value),
+              child: Text(
+                value,
+                style: GoogleFonts.jetBrainsMono(
+                  color: Colors.white,
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
+                ),
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildMetaRow(String label, String value, {bool isMonospace = false, Color? highlightColor}) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 5),
       child: Row(
@@ -517,18 +476,16 @@ class _EvidenceDetailsScreenState extends State<EvidenceDetailsScreen> {
             child: Text(
               value,
               textAlign: TextAlign.end,
-              overflow: TextOverflow.ellipsis,
-              maxLines: 1,
               style: isMonospace
                   ? GoogleFonts.jetBrainsMono(
-                      color: Colors.white,
+                      color: highlightColor ?? Colors.white,
                       fontSize: 12.5,
                       fontWeight: FontWeight.w700,
                     )
                   : GoogleFonts.inter(
-                      color: Colors.white,
+                      color: highlightColor ?? Colors.white,
                       fontSize: 13,
-                      fontWeight: FontWeight.w700,
+                      fontWeight: FontWeight.w600,
                     ),
             ),
           ),
@@ -549,21 +506,27 @@ class _EvidenceDetailsScreenState extends State<EvidenceDetailsScreen> {
       return Image.network(
         path,
         fit: BoxFit.cover,
-        errorBuilder: (_, __, ___) => _buildDemoSampleImage(),
+        errorBuilder: (_, __, ___) => _buildFallbackImage(),
       );
     }
 
-    return _buildDemoSampleImage();
+    return _buildFallbackImage();
   }
 
-  Widget _buildDemoSampleImage() {
-    return Image.network(
-      'https://images.unsplash.com/photo-1504917599217-d4dc5ebe6122?w=1000&q=85',
-      fit: BoxFit.cover,
-      errorBuilder: (_, __, ___) => Container(
-        color: const Color(0xFF0F1E36),
-        child: const Center(
-          child: Icon(Icons.image_outlined, color: Color(0xFF64748B), size: 48),
+  Widget _buildFallbackImage() {
+    return Container(
+      color: const Color(0xFF0F1E36),
+      child: Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            const Icon(Icons.cloud_off, color: Color(0xFF64748B), size: 48),
+            const SizedBox(height: 12),
+            Text(
+              'Encrypted cloud payload',
+              style: GoogleFonts.inter(color: const Color(0xFF64748B), fontSize: 13),
+            ),
+          ],
         ),
       ),
     );

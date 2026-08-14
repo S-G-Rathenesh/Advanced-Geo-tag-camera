@@ -74,7 +74,7 @@ class _CloudEvidenceScreenState extends State<CloudEvidenceScreen> {
 
       if (widget.isMyEvidence) {
         list = await apiService.getMyEvidence();
-        userNames[currentUser!.userId] = currentUser.name ?? currentUser.email ?? 'James Harrington';
+        userNames[currentUser!.userId] = currentUser.name ?? currentUser.email ?? 'Unknown User';
         userRoles[currentUser.userId] = currentUser.role.name.toUpperCase();
       } else if (widget.userId != null) {
         list = await apiService.getUserEvidence(widget.userId!);
@@ -303,35 +303,24 @@ class _CloudEvidenceScreenState extends State<CloudEvidenceScreen> {
                     ),
                   ),
                 )
-              else if (_filteredEvidence.isEmpty && _evidenceList.isEmpty)
-                // Demo fallback cards matching screenshot
-                SliverPadding(
-                  padding: const EdgeInsets.symmetric(horizontal: 20),
-                  sliver: SliverList(
-                    delegate: SliverChildListDelegate([
-                      _buildDemoEvidenceCard(
-                        id: 'ev-001',
-                        ownerName: 'James Harrington',
-                        role: 'OFFICER',
-                        location: 'Koramangala, Bengaluru',
-                        date: '14 Aug 2026 • 10:42 AM',
-                        gpsAccuracy: 'GPS ±12m',
-                        isSynced: true,
-                        imageUrl: 'https://images.unsplash.com/photo-1504917599217-d4dc5ebe6122?w=800&q=80',
+              else if (_filteredEvidence.isEmpty)
+                SliverFillRemaining(
+                  child: Center(
+                    child: Padding(
+                      padding: const EdgeInsets.all(24),
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          const Icon(Icons.cloud_off, size: 48, color: Color(0xFF64748B)),
+                          const SizedBox(height: 12),
+                          Text(
+                            'No evidence found',
+                            textAlign: TextAlign.center,
+                            style: GoogleFonts.inter(color: const Color(0xFF94A3B8), fontSize: 14),
+                          ),
+                        ],
                       ),
-                      const SizedBox(height: 16),
-                      _buildDemoEvidenceCard(
-                        id: 'ev-002',
-                        ownerName: 'Marcus Webb',
-                        role: 'USER',
-                        location: 'Indiranagar, Bengaluru',
-                        date: '14 Aug 2026 • 09:15 AM',
-                        gpsAccuracy: 'GPS ±28m',
-                        isSynced: false,
-                        imageUrl: 'https://images.unsplash.com/photo-1477959858617-67f30bc75b82?w=800&q=80',
-                      ),
-                      const SizedBox(height: 24),
-                    ]),
+                    ),
                   ),
                 )
               else
@@ -341,7 +330,7 @@ class _CloudEvidenceScreenState extends State<CloudEvidenceScreen> {
                     delegate: SliverChildBuilderDelegate(
                       (context, index) {
                         final evidence = _filteredEvidence[index];
-                        final ownerName = _userNames[evidence.userId] ?? 'James Harrington';
+                        final ownerName = _userNames[evidence.userId] ?? 'Unknown User';
                         final role = _userRoles[evidence.userId] ?? 'OFFICER';
                         return Padding(
                           padding: const EdgeInsets.only(bottom: 16),
@@ -547,198 +536,6 @@ class _CloudEvidenceScreenState extends State<CloudEvidenceScreen> {
             ),
           ],
         ),
-      ),
-    );
-  }
-
-  Widget _buildDemoEvidenceCard({
-    required String id,
-    required String ownerName,
-    required String role,
-    required String location,
-    required String date,
-    required String gpsAccuracy,
-    required bool isSynced,
-    required String imageUrl,
-  }) {
-    final initials = ownerName.split(' ').map((e) => e[0]).take(2).join().toUpperCase();
-
-    return Container(
-      decoration: BoxDecoration(
-        color: const Color(0xFF0B1322),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: const Color(0xFF1E293B)),
-      ),
-      clipBehavior: Clip.antiAlias,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Image Preview Header
-          Stack(
-            children: [
-              Container(
-                height: 170,
-                width: double.infinity,
-                color: const Color(0xFF070E1B),
-                child: Image.network(
-                  imageUrl,
-                  fit: BoxFit.cover,
-                  errorBuilder: (_, __, ___) => _buildPlaceholderImage(),
-                ),
-              ),
-
-              // Top Left ID Badge
-              Positioned(
-                top: 12,
-                left: 12,
-                child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFF060B14).withAlpha(200),
-                    borderRadius: BorderRadius.circular(6),
-                    border: Border.all(color: const Color(0xFF1E293B)),
-                  ),
-                  child: Text(
-                    id,
-                    style: GoogleFonts.jetBrainsMono(
-                      color: Colors.white,
-                      fontSize: 11,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                ),
-              ),
-
-              // Top Right Integrity Badge
-              Positioned(
-                top: 12,
-                right: 12,
-                child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFF052E16).withAlpha(220),
-                    borderRadius: BorderRadius.circular(6),
-                    border: Border.all(color: const Color(0xFF10B981)),
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      const Icon(Icons.check, size: 12, color: Color(0xFF10B981)),
-                      const SizedBox(width: 4),
-                      Text(
-                        'Integrity Verified',
-                        style: GoogleFonts.inter(
-                          color: const Color(0xFF10B981),
-                          fontSize: 10.5,
-                          fontWeight: FontWeight.w700,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ],
-          ),
-
-          // Card Body Details
-          Padding(
-            padding: const EdgeInsets.all(16),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // Owner Row
-                Row(
-                  children: [
-                    CircleAvatar(
-                      radius: 14,
-                      backgroundColor: role == 'OFFICER' ? const Color(0xFF1E3A8A) : const Color(0xFF0C4A6E),
-                      child: Text(
-                        initials,
-                        style: GoogleFonts.inter(
-                          color: role == 'OFFICER' ? const Color(0xFF60A5FA) : const Color(0xFF38BDF8),
-                          fontSize: 10.5,
-                          fontWeight: FontWeight.w800,
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    Text(
-                      ownerName,
-                      style: GoogleFonts.inter(
-                        color: Colors.white,
-                        fontSize: 14.5,
-                        fontWeight: FontWeight.w700,
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2.5),
-                      decoration: BoxDecoration(
-                        color: role == 'OFFICER' ? const Color(0xFF1E3A8A) : const Color(0xFF0C4A6E),
-                        borderRadius: BorderRadius.circular(4),
-                      ),
-                      child: Text(
-                        role,
-                        style: GoogleFonts.inter(
-                          color: role == 'OFFICER' ? const Color(0xFF60A5FA) : const Color(0xFF38BDF8),
-                          fontSize: 9.5,
-                          fontWeight: FontWeight.w800,
-                          letterSpacing: 0.4,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-
-                const SizedBox(height: 10),
-
-                // Location
-                Row(
-                  children: [
-                    const Icon(Icons.location_on_outlined, size: 15, color: Color(0xFF8E9EB5)),
-                    const SizedBox(width: 4),
-                    Text(
-                      location,
-                      style: GoogleFonts.inter(
-                        color: const Color(0xFF8E9EB5),
-                        fontSize: 12.5,
-                      ),
-                    ),
-                  ],
-                ),
-
-                const SizedBox(height: 4),
-
-                // Date & Timestamp
-                Text(
-                  date,
-                  style: GoogleFonts.inter(
-                    color: const Color(0xFF64748B),
-                    fontSize: 12,
-                  ),
-                ),
-
-                const SizedBox(height: 10),
-
-                // Footer: Accuracy & Status
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text(
-                      gpsAccuracy,
-                      style: GoogleFonts.jetBrainsMono(
-                        color: const Color(0xFF64748B),
-                        fontSize: 11.5,
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-                    _buildStatusPill(isSynced),
-                  ],
-                ),
-              ],
-            ),
-          ),
-        ],
       ),
     );
   }

@@ -16,10 +16,10 @@ class ProfileScreen extends StatelessWidget {
     final authService = context.watch<AuthService>();
     final user = authService.currentUser;
 
-    final name = user?.name?.isNotEmpty == true ? user!.name! : 'James Harrington';
-    final email = user?.email?.isNotEmpty == true ? user!.email! : 'j.harrington@geoevidence.gov';
+    final name = user?.name?.isNotEmpty == true ? user!.name! : 'Unknown User';
+    final email = user?.email?.isNotEmpty == true ? user!.email! : 'Unknown Email';
     final role = user?.role.name.toUpperCase() ?? 'OFFICER';
-    final badgeId = user?.department?.isNotEmpty == true ? user!.department! : 'OFF-4021';
+    final badgeId = user?.department?.isNotEmpty == true ? user!.department! : 'Unknown ID';
     final initials = name.split(' ').map((e) => e.isNotEmpty ? e[0] : '').take(2).join().toUpperCase();
 
     return Scaffold(

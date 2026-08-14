@@ -30,6 +30,9 @@ def get_user_evidence(
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
         
+    if current_user.role.name == "SUPERVISOR" and user.department != current_user.department:
+        raise HTTPException(status_code=403, detail="Not authorized to view evidence of this user")
+        
     evidence_list = db.query(Evidence).filter(Evidence.user_id == user_id).all()
     log_audit_event(db, action=f"{current_user.role.name}_EVIDENCE_ACCESS", user_id=current_user.id, target_user_id=user_id)
     return evidence_list

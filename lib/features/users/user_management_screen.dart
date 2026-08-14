@@ -5,7 +5,6 @@ import 'package:provider/provider.dart';
 import '../../models/user_model.dart';
 import '../../services/api_service.dart';
 import '../../services/auth_service.dart';
-import '../evidence/cloud_evidence_screen.dart';
 
 /// Tactical User Management screen matching the mockup.
 class UserManagementScreen extends StatefulWidget {
@@ -280,49 +279,24 @@ class _UserManagementScreenState extends State<UserManagementScreen> {
                     ),
                   ),
                 )
-              else if (_filteredUsers.isEmpty && _users.isEmpty)
-                // Demo fallback cards matching mockup
-                SliverPadding(
-                  padding: const EdgeInsets.symmetric(horizontal: 20),
-                  sliver: SliverList(
-                    delegate: SliverChildListDelegate([
-                      _buildDemoUserCard(
-                        name: 'James Harrington',
-                        role: 'OFFICER',
-                        email: 'j.harrington@geoevidence.gov',
-                        status: 'Active · 2 min ago',
-                        actionType: null,
-                        onAction: () {},
+              else if (_filteredUsers.isEmpty)
+                SliverFillRemaining(
+                  child: Center(
+                    child: Padding(
+                      padding: const EdgeInsets.all(24),
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          const Icon(Icons.group_off_outlined, size: 48, color: Color(0xFF64748B)),
+                          const SizedBox(height: 12),
+                          Text(
+                            'No users found',
+                            textAlign: TextAlign.center,
+                            style: GoogleFonts.inter(color: const Color(0xFF94A3B8), fontSize: 14),
+                          ),
+                        ],
                       ),
-                      const SizedBox(height: 12),
-                      _buildDemoUserCard(
-                        name: 'Priya Sharma',
-                        role: 'SUPERVISOR',
-                        email: 'p.sharma@geoevidence.gov',
-                        status: 'Active · 18 min ago',
-                        actionType: 'Revoke Supervisor',
-                        onAction: () {},
-                      ),
-                      const SizedBox(height: 12),
-                      _buildDemoUserCard(
-                        name: 'Marcus Webb',
-                        role: 'USER',
-                        email: 'm.webb@geoevidence.gov',
-                        status: 'Active · 1 hr ago',
-                        actionType: 'Grant Supervisor',
-                        onAction: () {},
-                      ),
-                      const SizedBox(height: 12),
-                      _buildDemoUserCard(
-                        name: 'Fatima Al-Rashid',
-                        role: 'USER',
-                        email: 'f.alrashid@geoevidence.gov',
-                        status: 'Active · 3 hr ago',
-                        actionType: 'Grant Supervisor',
-                        onAction: () {},
-                      ),
-                      const SizedBox(height: 24),
-                    ]),
+                    ),
                   ),
                 )
               else
@@ -349,6 +323,7 @@ class _UserManagementScreenState extends State<UserManagementScreen> {
   }
 
   Widget _buildLiveUserCard(UserModel user) {
+    final currentUser = context.read<AuthService>().currentUser;
     final initials = user.name?.isNotEmpty == true
         ? user.name!.split(' ').map((e) => e.isNotEmpty ? e[0] : '').take(2).join().toUpperCase()
         : 'US';
@@ -449,7 +424,7 @@ class _UserManagementScreenState extends State<UserManagementScreen> {
             ],
           ),
 
-          if (!isOfficer) ...[
+          if (!isOfficer && currentUser?.role == UserRole.officer) ...[
             const SizedBox(height: 14),
             SizedBox(
               width: double.infinity,
@@ -475,139 +450,6 @@ class _UserManagementScreenState extends State<UserManagementScreen> {
                   isSupervisor ? 'Revoke Supervisor' : 'Grant Supervisor',
                   style: GoogleFonts.inter(
                     color: isSupervisor ? const Color(0xFFEF4444) : const Color(0xFFF59E0B),
-                    fontWeight: FontWeight.w700,
-                    fontSize: 13.5,
-                  ),
-                ),
-              ),
-            ),
-          ],
-        ],
-      ),
-    );
-  }
-
-  Widget _buildDemoUserCard({
-    required String name,
-    required String role,
-    required String email,
-    required String status,
-    required String? actionType,
-    required VoidCallback onAction,
-  }) {
-    final initials = name.split(' ').map((e) => e[0]).take(2).join().toUpperCase();
-    final isRevoke = actionType == 'Revoke Supervisor';
-
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: const Color(0xFF0B1322),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: const Color(0xFF1E293B)),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              // Avatar Box
-              Container(
-                width: 44,
-                height: 44,
-                decoration: BoxDecoration(
-                  color: const Color(0xFF0F1E36),
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: const Color(0xFF1E3A5F)),
-                ),
-                child: Center(
-                  child: Text(
-                    initials,
-                    style: GoogleFonts.inter(
-                      color: const Color(0xFF60A5FA),
-                      fontSize: 14,
-                      fontWeight: FontWeight.w800,
-                    ),
-                  ),
-                ),
-              ),
-
-              const SizedBox(width: 12),
-
-              // User Details
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        Text(
-                          name,
-                          style: GoogleFonts.inter(
-                            color: Colors.white,
-                            fontSize: 15,
-                            fontWeight: FontWeight.w700,
-                          ),
-                        ),
-                        const SizedBox(width: 8),
-                        _buildRoleBadge(role),
-                      ],
-                    ),
-                    const SizedBox(height: 3),
-                    Text(
-                      email,
-                      style: GoogleFonts.inter(
-                        color: const Color(0xFF8E9EB5),
-                        fontSize: 12.5,
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                    Row(
-                      children: [
-                        Container(
-                          width: 5,
-                          height: 5,
-                          decoration: const BoxDecoration(
-                            shape: BoxShape.circle,
-                            color: Color(0xFF10B981),
-                          ),
-                        ),
-                        const SizedBox(width: 5),
-                        Text(
-                          status,
-                          style: GoogleFonts.inter(
-                            color: const Color(0xFF10B981),
-                            fontSize: 11,
-                            fontWeight: FontWeight.w500,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-
-          if (actionType != null) ...[
-            const SizedBox(height: 14),
-            SizedBox(
-              width: double.infinity,
-              height: 42,
-              child: OutlinedButton(
-                onPressed: onAction,
-                style: OutlinedButton.styleFrom(
-                  backgroundColor: isRevoke ? const Color(0xFF1C1318) : const Color(0xFF1E180A),
-                  side: BorderSide(
-                    color: isRevoke ? const Color(0xFF7F1D1D) : const Color(0xFF78350F),
-                  ),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                ),
-                child: Text(
-                  actionType,
-                  style: GoogleFonts.inter(
-                    color: isRevoke ? const Color(0xFFEF4444) : const Color(0xFFF59E0B),
                     fontWeight: FontWeight.w700,
                     fontSize: 13.5,
                   ),

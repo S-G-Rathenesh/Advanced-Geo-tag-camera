@@ -157,21 +157,21 @@ class EvidenceRecord {
       captureId: json['capture_id'] as String,
       userId: json['user_id'] as String,
       deviceId: json['device_id'] as String,
-      imagePath: json['image_path'] as String? ?? '',
+      imagePath: json['image_url'] as String? ?? '', // Maps to Cloudinary URL
       latitude: (json['latitude'] as num).toDouble(),
       longitude: (json['longitude'] as num).toDouble(),
       altitude: json['altitude'] != null
           ? (json['altitude'] as num).toDouble()
           : null,
-      accuracy: (json['accuracy'] as num).toDouble(),
+      accuracy: (json['gps_accuracy'] as num).toDouble(),
       address: json['address'] as String?,
-      timestamp: DateTime.parse(json['timestamp'] as String),
+      timestamp: DateTime.parse(json['capture_timestamp'] as String),
       sha256Hash: json['sha256_hash'] as String,
       syncStatus: SyncStatusExtension.fromString(
-          json['sync_status'] as String? ?? 'pending'),
-      createdAt: DateTime.tryParse(json['created_at'] as String? ?? '') ??
+          json['status'] as String? ?? 'synced'), // Assuming API response means it's synced
+      createdAt: DateTime.tryParse(json['upload_timestamp'] as String? ?? '') ??
           DateTime.now(),
-      updatedAt: DateTime.tryParse(json['updated_at'] as String? ?? '') ??
+      updatedAt: DateTime.tryParse(json['upload_timestamp'] as String? ?? '') ??
           DateTime.now(),
     );
   }

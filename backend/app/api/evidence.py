@@ -109,7 +109,10 @@ def get_all_evidence(
     db: Session = Depends(get_db),
     current_user: User = Depends(require_role(["OFFICER", "SUPERVISOR"]))
 ):
-    return db.query(Evidence).order_by(Evidence.capture_timestamp.desc()).all()
+    query = db.query(Evidence)
+    if current_user.role.name == "SUPERVISOR":
+        query = query.join(User, Evidence.user_id == User.id).filter(User.department == current_user.department)
+    return query.order_by(Evidence.capture_timestamp.desc()).all()
 
 @router.get("/my", response_model=List[EvidenceResponse])
 def get_my_evidence(
@@ -131,6 +134,12 @@ def get_evidence(
     if current_user.role.name == "USER" and evidence.user_id != current_user.id:
         log_audit_event(db, action="UNAUTHORIZED_EVIDENCE_ACCESS_ATTEMPT", user_id=current_user.id, evidence_id=evidence.id)
         raise HTTPException(status_code=403, detail="Not authorized to view this evidence")
+        
+    if current_user.role.name == "SUPERVISOR":
+        owner = db.query(User).filter(User.id == evidence.user_id).first()
+        if owner and owner.department != current_user.department:
+            log_audit_event(db, action="UNAUTHORIZED_EVIDENCE_ACCESS_ATTEMPT", user_id=current_user.id, evidence_id=evidence.id)
+            raise HTTPException(status_code=403, detail="Not authorized to view evidence outside your department")
         
     action_type = f"{current_user.role.name}_EVIDENCE_ACCESS"
     log_audit_event(db, action=action_type, user_id=current_user.id, evidence_id=evidence.id)

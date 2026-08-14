@@ -114,8 +114,8 @@ class _UserDashboardState extends State<UserDashboard> {
       greeting = 'Good evening';
     }
 
-    final userName = user?.name?.isNotEmpty == true ? user!.name! : 'Marcus Webb';
-    final badgeId = user?.department?.isNotEmpty == true ? user!.department! : 'FLD-0922';
+    final userName = user?.name?.isNotEmpty == true ? user!.name! : 'Unknown User';
+    final badgeId = user?.department?.isNotEmpty == true ? user!.department! : 'Unknown ID';
 
     return SafeArea(
       child: SingleChildScrollView(

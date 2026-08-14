@@ -107,7 +107,7 @@ class _OfficerDashboardState extends State<OfficerDashboard> {
       greeting = 'Good evening';
     }
 
-    final officerName = user?.name?.isNotEmpty == true ? user!.name! : 'James Harrington';
+    final officerName = user?.name?.isNotEmpty == true ? user!.name! : 'Officer';
     final badgeId = user?.department?.isNotEmpty == true ? user!.department! : 'OFF-4021';
 
     return SafeArea(

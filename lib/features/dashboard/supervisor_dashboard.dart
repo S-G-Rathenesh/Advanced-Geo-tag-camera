@@ -114,10 +114,9 @@ class _SupervisorDashboardState extends State<SupervisorDashboard> {
       greeting = 'Good evening';
     }
 
-    final supervisorName =
-        user?.name?.isNotEmpty == true ? user!.name! : 'Priya Sharma';
+    final supervisorName = user?.name?.isNotEmpty == true ? user!.name! : 'Unknown Supervisor';
     final badgeId =
-        user?.department?.isNotEmpty == true ? user!.department! : 'SUP-1084';
+        user?.department?.isNotEmpty == true ? user!.department! : 'Unknown ID';
 
     return SafeArea(
       child: SingleChildScrollView(
