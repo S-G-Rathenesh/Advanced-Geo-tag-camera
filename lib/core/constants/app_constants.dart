@@ -11,10 +11,9 @@ class AppConstants {
   static const String appTagline = 'Secure Field Evidence Capture';
 
   // 🌐 API Configuration 🌐🌐🌐🌐🌐🌐🌐🌐🌐🌐🌐🌐🌐🌐🌐🌐🌐🌐🌐🌐🌐🌐🌐🌐🌐🌐🌐🌐🌐🌐🌐🌐🌐🌐🌐🌐🌐🌐🌐🌐🌐🌐🌐🌐🌐🌐
-  /// Base URL placeholder – replaced when FastAPI backend is integrated.
-  /// 10.0.2.2 is the localhost loopback for the Android emulator.
+  /// Hosted FastAPI backend on Render.
   static String get apiBaseUrl {
-    return 'http://127.0.0.1:8000/api/v1';
+    return 'https://advanced-geo-tag-camera.onrender.com/api/v1';
   }
   static const Duration apiTimeout = Duration(seconds: 30);
 
