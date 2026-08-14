@@ -13,6 +13,11 @@ echo.
 rem Navigate to project root
 cd /d "%~dp0"
 
+rem Add Android SDK platform-tools to PATH if present
+if exist "%LOCALAPPDATA%\Android\sdk\platform-tools" (
+    set "PATH=%LOCALAPPDATA%\Android\sdk\platform-tools;!PATH!"
+)
+
 echo [1/3] Checking Backend Virtual Environment...
 if not exist "backend\venv" (
     echo     Virtual environment not found. Creating backend\venv...
@@ -40,9 +45,9 @@ if not exist "pubspec.lock" (
 
 echo.
 echo [3/3] Starting GeoEvidence FastAPI Backend...
-start "GeoEvidence FastAPI Backend (Port 8000)" cmd /k "cd /d "%~dp0backend" && call venv\Scripts\activate.bat && python -m uvicorn app.main:app --host 127.0.0.1 --port 8000 --reload"
+start "GeoEvidence FastAPI Backend (Port 8000)" cmd /k "cd /d "%~dp0backend" && call venv\Scripts\activate.bat && python -m uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload"
 
-echo     Backend server launching on http://127.0.0.1:8000 ...
+echo     Backend server launching on http://127.0.0.1:8000 (0.0.0.0:8000) ...
 echo.
 
 echo =======================================================================
@@ -59,7 +64,7 @@ echo Select target platform for Flutter app:
 echo.
 echo   [1] Run Flutter Desktop (Windows)
 echo   [2] Run Flutter Web (Chrome - Recommended without Developer Mode)
-echo   [3] Run Flutter Android (Emulator or Connected Device)
+echo   [3] Run Flutter Android (Connected Phone or Emulator)
 echo   [4] Backend Only (Keep Backend Running)
 echo   [5] Enable Windows Developer Mode (Required for Desktop Symlinks)
 echo   [6] Exit
@@ -92,8 +97,17 @@ goto finish
 
 :run_android
 echo.
+echo Setting up ADB reverse proxy for backend communication (port 8000)...
+where adb >nul 2>nul
+if %errorlevel% equ 0 (
+    adb reverse tcp:8000 tcp:8000 >nul 2>nul
+    echo     Port 8000 reversed successfully for USB-connected Android device.
+) else (
+    echo     [Notice] ADB not in PATH. Ensure phone and PC are on the same Wi-Fi network.
+)
+echo.
 echo Starting GeoEvidence on Android...
-call flutter run -d android
+call flutter run
 goto finish
 
 :run_backend
