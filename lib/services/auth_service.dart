@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
+import 'package:google_sign_in/google_sign_in.dart';
 
 import '../core/constants/app_constants.dart';
 import '../core/security/secure_storage_service.dart';
@@ -66,30 +67,51 @@ class AuthService extends ChangeNotifier {
     }
   }
 
-  /// Google-style login via mock JWT sent to FastAPI /auth/google endpoint.
-  /// Used by Demo Supervisor, Demo User, and Mock Google login dialog.
-  Future<LoginResponse> googleLogin(String mockEmail, String mockSub, String mockName) async {
+  final GoogleSignIn _googleSignIn = kIsWeb
+      ? GoogleSignIn(
+          clientId: '623719964431-cu0so7n08k2vaea5m2uds8rflq552m0t.apps.googleusercontent.com',
+          scopes: ['email', 'profile'],
+        )
+      : GoogleSignIn(
+          serverClientId: '623719964431-cu0so7n08k2vaea5m2uds8rflq552m0t.apps.googleusercontent.com',
+          scopes: ['email', 'profile'],
+        );
+
+  /// Real Google-style login using native Google Sign In.
+  Future<LoginResponse> googleLogin() async {
     _isLoading = true;
     _error = null;
     notifyListeners();
 
     try {
-      // Create a mock JWT to simulate a Google Identity token
-      final header = base64UrlEncode(utf8.encode(jsonEncode({'alg': 'HS256', 'typ': 'JWT'})));
-      final payload = base64UrlEncode(utf8.encode(jsonEncode({
-        'email': mockEmail,
-        'sub': mockSub,
-        'name': mockName,
-        'picture': null,
-      })));
-      final mockIdToken = '$header.$payload.mocksignature';
+      // Trigger the native Google Sign In flow
+      final GoogleSignInAccount? account = await _googleSignIn.signIn();
+      
+      if (account == null) {
+        // User canceled the sign-in flow
+        _isLoading = false;
+        _error = 'Sign in canceled by user';
+        notifyListeners();
+        return LoginResponse.error(_error!);
+      }
+
+      // Obtain the auth details (which contains the idToken)
+      final GoogleSignInAuthentication auth = await account.authentication;
+      final String? idToken = auth.idToken;
+
+      if (idToken == null) {
+        _isLoading = false;
+        _error = 'Failed to get ID token from Google';
+        notifyListeners();
+        return LoginResponse.error(_error!);
+      }
 
       final url = Uri.parse('${AppConstants.apiBaseUrl}/auth/google');
       final response = await http.post(
         url,
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode({
-          'id_token': mockIdToken,
+          'id_token': idToken,
         }),
       );
 
@@ -106,6 +128,8 @@ class AuthService extends ChangeNotifier {
         notifyListeners();
         return LoginResponse(success: true, token: token, user: _currentUser);
       } else {
+        // We sign out from google so they can try again if the backend rejected them
+        await _googleSignIn.signOut();
         _isLoading = false;
         _error = 'Google Auth Failed: ${response.statusCode}';
         notifyListeners();

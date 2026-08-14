@@ -14,6 +14,7 @@ class Settings(BaseSettings):
     SECRET_KEY: str = "supersecretkey_change_in_production"
     ALGORITHM: str = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 60 * 24 * 7  # 7 days
+    GOOGLE_CLIENT_ID: str
 
     # Cloudinary
     CLOUDINARY_CLOUD_NAME: str

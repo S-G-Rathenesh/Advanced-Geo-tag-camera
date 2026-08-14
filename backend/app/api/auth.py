@@ -24,14 +24,14 @@ def officer_login(request: LoginRequest, db: Session = Depends(get_db)):
     
     if not user or not user.password_hash or not verify_password(request.password, user.password_hash):
         if user:
-            log_audit_event(db, user_id=user.id, action="OFFICER_LOGIN_FAILURE", details="Invalid password")
+            log_audit_event(db, user_id=user.id, action="PASSWORD_LOGIN_FAILURE", details="Invalid password")
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Incorrect username or password",
         )
     
-    if not user.is_active or user.role.name != "OFFICER":
-        log_audit_event(db, user_id=user.id, action="OFFICER_LOGIN_FAILURE", details="Inactive account or not an officer")
+    if not user.is_active:
+        log_audit_event(db, user_id=user.id, action="PASSWORD_LOGIN_FAILURE", details="Inactive account")
         raise HTTPException(status_code=403, detail="Unauthorized access")
 
     access_token = create_access_token(subject=user.id)
@@ -39,7 +39,7 @@ def officer_login(request: LoginRequest, db: Session = Depends(get_db)):
     user.last_login_at = datetime.now(timezone.utc)
     db.commit()
 
-    log_audit_event(db, user_id=user.id, action="OFFICER_LOGIN_SUCCESS")
+    log_audit_event(db, user_id=user.id, action="PASSWORD_LOGIN_SUCCESS")
     
     return {
         "access_token": access_token,
@@ -47,24 +47,20 @@ def officer_login(request: LoginRequest, db: Session = Depends(get_db)):
         "user": user
     }
 
+from google.oauth2 import id_token
+from google.auth.transport import requests
+from app.core.config import settings
+
 @router.post("/google", response_model=Token)
 def google_auth(request: GoogleAuthRequest, db: Session = Depends(get_db)):
-    # IN A REAL APP: Verify the id_token using google.oauth2.id_token.verify_oauth2_token
-    # FOR THIS PROTOTYPE: We decode the mock JWT token without verifying signature 
-    # to allow the Flutter mock auth mechanism to work locally.
-    
     try:
-        parts = request.id_token.split(".")
-        if len(parts) != 3:
-            raise ValueError("Invalid JWT format")
-        
-        # Add padding if needed
-        payload_b64 = parts[1]
-        payload_b64 += "=" * ((4 - len(payload_b64) % 4) % 4)
-        
-        payload_json = base64.urlsafe_b64decode(payload_b64).decode("utf-8")
-        payload = json.loads(payload_json)
-        
+        # Verify the token with Google
+        payload = id_token.verify_oauth2_token(
+            request.id_token,
+            requests.Request(),
+            settings.GOOGLE_CLIENT_ID
+        )
+
         email = payload.get("email")
         google_subject_id = payload.get("sub")
         name = payload.get("name")
@@ -73,9 +69,12 @@ def google_auth(request: GoogleAuthRequest, db: Session = Depends(get_db)):
         if not email or not google_subject_id:
             raise ValueError("Missing email or sub in token")
             
-    except Exception as e:
+    except ValueError as e:
         log_audit_event(db, action="GOOGLE_LOGIN_FAILURE", details=str(e))
-        raise HTTPException(status_code=401, detail="Invalid Google token")
+        raise HTTPException(status_code=401, detail=f"Invalid Google token: {str(e)}")
+    except Exception as e:
+        log_audit_event(db, action="GOOGLE_LOGIN_FAILURE", details="Unknown error verifying token")
+        raise HTTPException(status_code=401, detail="Error verifying token")
         
     user = db.query(User).filter(User.google_subject_id == google_subject_id).first()
     

@@ -34,10 +34,12 @@ def init_db():
             )
             db.add(officer)
             
-        # Demo Supervisor (Google Auth Mock via email)
+        # Demo Supervisor
         supervisor = db.query(User).filter(User.email == "demo.supervisor@gmail.com").first()
         if not supervisor:
             supervisor = User(
+                username="demo_supervisor",
+                password_hash=get_password_hash("password123"),
                 email="demo.supervisor@gmail.com",
                 google_subject_id="demo_google_sup_123",
                 name="Demo Supervisor",
@@ -46,6 +48,9 @@ def init_db():
                 is_active=True
             )
             db.add(supervisor)
+        elif not supervisor.username:
+            supervisor.username = "demo_supervisor"
+            supervisor.password_hash = get_password_hash("password123")
             
         # Demo Users
         for i in range(1, 4):
@@ -53,6 +58,8 @@ def init_db():
             user = db.query(User).filter(User.email == user_email).first()
             if not user:
                 user = User(
+                    username=f"demo_user{i}",
+                    password_hash=get_password_hash("password123"),
                     email=user_email,
                     google_subject_id=f"demo_google_user_{i}",
                     name=f"Demo User {i}",
@@ -61,6 +68,9 @@ def init_db():
                     is_active=True
                 )
                 db.add(user)
+            elif not user.username:
+                user.username = f"demo_user{i}"
+                user.password_hash = get_password_hash("password123")
 
         db.commit()
     finally:

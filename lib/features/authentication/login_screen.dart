@@ -42,10 +42,9 @@ class _LoginScreenState extends State<LoginScreen> {
     _handleResponse(response);
   }
 
-  Future<void> _handleGoogleLogin(
-      String email, String sub, String name) async {
+  Future<void> _handleGoogleLogin() async {
     final authService = context.read<AuthService>();
-    final response = await authService.googleLogin(email, sub, name);
+    final response = await authService.googleLogin();
     _handleResponse(response);
   }
 
@@ -65,87 +64,40 @@ class _LoginScreenState extends State<LoginScreen> {
     }
   }
 
-  void _showMockGoogleDialog() {
-    final emailController = TextEditingController(text: 'officer@geotag.com');
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        backgroundColor: const Color(0xFF0B1322),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16),
-          side: const BorderSide(color: Color(0xFF1E293B)),
-        ),
-        title: Text(
-          'Google Identity Sign In',
-          style: GoogleFonts.inter(
-            color: Colors.white,
-            fontWeight: FontWeight.w700,
-            fontSize: 18,
-          ),
-        ),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'Enter your Google account email to sign in via verified SSO token:',
-              style: GoogleFonts.inter(color: const Color(0xFF94A3B8), fontSize: 13),
-            ),
-            const SizedBox(height: 16),
-            TextField(
-              controller: emailController,
-              style: const TextStyle(color: Colors.white),
-              decoration: InputDecoration(
-                filled: true,
-                fillColor: const Color(0xFF060B14),
-                hintText: 'user@example.com',
-                hintStyle: const TextStyle(color: Color(0xFF64748B)),
-                contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(8),
-                  borderSide: const BorderSide(color: Color(0xFF1E293B)),
-                ),
-                enabledBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(8),
-                  borderSide: const BorderSide(color: Color(0xFF1E293B)),
-                ),
-                focusedBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(8),
-                  borderSide: const BorderSide(color: Color(0xFF2563EB)),
-                ),
-              ),
-            ),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel', style: TextStyle(color: Color(0xFF94A3B8))),
-          ),
-          FilledButton(
-            style: FilledButton.styleFrom(backgroundColor: const Color(0xFF2563EB)),
-            onPressed: () {
-              final email = emailController.text.trim();
-              if (email.isNotEmpty) {
-                Navigator.pop(context);
-                _handleGoogleLogin(email, 'google_sso_$email', email.split('@').first);
-              }
-            },
-            child: const Text('Continue'),
-          ),
-        ],
-      ),
-    );
+  void _autofillDemoOfficer() {
+    setState(() {
+      _showOfficerLogin = true;
+      _usernameController.text = 'demo_officer';
+      _passwordController.text = 'password123';
+    });
+  }
+
+  void _autofillDemoSupervisor() {
+    setState(() {
+      _showOfficerLogin = true;
+      _usernameController.text = 'demo_supervisor';
+      _passwordController.text = 'password123';
+    });
+  }
+
+  void _autofillDemoUser() {
+    setState(() {
+      _showOfficerLogin = true;
+      _usernameController.text = 'demo_user';
+      _passwordController.text = 'password123';
+    });
   }
 
   @override
   Widget build(BuildContext context) {
     final authService = context.watch<AuthService>();
+    final theme = Theme.of(context);
 
     return Scaffold(
       backgroundColor: const Color(0xFF060B14),
       body: LoadingOverlay(
         isLoading: authService.isLoading,
+<<<<<<< HEAD
         message: 'Verifying credentials...',
         child: SafeArea(
           child: SingleChildScrollView(
@@ -174,6 +126,145 @@ class _LoginScreenState extends State<LoginScreen> {
                             BoxShadow(
                               color: Color(0xFF10B981),
                               blurRadius: 6,
+=======
+        message: 'Authenticating...',
+        child: GradientBackground(
+          addOverlay: true,
+          child: SafeArea(
+            child: Center(
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.symmetric(horizontal: 28),
+                child: FadeTransition(
+                  opacity: _fadeAnim,
+                  child: SlideTransition(
+                    position: _slideAnim,
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        ClipRRect(
+                          borderRadius: BorderRadius.circular(20),
+                          child: Image.asset(
+                            'assets/logo.png',
+                            width: 72,
+                            height: 72,
+                            fit: BoxFit.cover,
+                          ),
+                        ),
+                        const SizedBox(height: 24),
+                        Text(
+                          'Secure Geo-Tag',
+                          style: theme.textTheme.headlineMedium?.copyWith(
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                        const SizedBox(height: 40),
+
+                        // Google Sign In Button
+                        SizedBox(
+                          width: double.infinity,
+                          height: 56,
+                          child: FilledButton.icon(
+                            onPressed: _handleGoogleLogin,
+                            icon: const Icon(Icons.g_mobiledata, size: 32),
+                            label: const Text('Continue with Google'),
+                            style: FilledButton.styleFrom(
+                              backgroundColor: Colors.white,
+                              foregroundColor: Colors.black87,
+                            ),
+                          ),
+                        ),
+
+                        const SizedBox(height: 24),
+                        TextButton(
+                          onPressed: () {
+                            setState(() {
+                              _showOfficerLogin = !_showOfficerLogin;
+                            });
+                          },
+                          child: Text(
+                            _showOfficerLogin ? 'Hide Credential Login' : 'Credential Login',
+                            style: const TextStyle(color: Colors.white70),
+                          ),
+                        ),
+
+                        if (_showOfficerLogin) ...[
+                          const SizedBox(height: 16),
+                          Form(
+                            key: _formKey,
+                            child: Column(
+                              children: [
+                                TextFormField(
+                                  controller: _usernameController,
+                                  style: theme.textTheme.bodyLarge,
+                                  decoration: InputDecoration(
+                                    hintText: 'Username',
+                                    prefixIcon: Icon(
+                                      Icons.person,
+                                      color: theme.colorScheme.primary,
+                                    ),
+                                  ),
+                                  validator: (value) => value == null || value.isEmpty ? 'Required' : null,
+                                ),
+                                const SizedBox(height: 16),
+                                TextFormField(
+                                  controller: _passwordController,
+                                  obscureText: _obscurePassword,
+                                  style: theme.textTheme.bodyLarge,
+                                  decoration: InputDecoration(
+                                    hintText: 'Password',
+                                    prefixIcon: Icon(
+                                      Icons.lock,
+                                      color: theme.colorScheme.primary,
+                                    ),
+                                    suffixIcon: IconButton(
+                                      icon: Icon(_obscurePassword ? Icons.visibility_off : Icons.visibility),
+                                      onPressed: () => setState(() => _obscurePassword = !_obscurePassword),
+                                    ),
+                                  ),
+                                  validator: (value) => value == null || value.isEmpty ? 'Required' : null,
+                                ),
+                                const SizedBox(height: 24),
+                                SizedBox(
+                                  width: double.infinity,
+                                  height: 56,
+                                  child: FilledButton(
+                                    onPressed: _handleOfficerLogin,
+                                    child: const Text('Sign In with Credentials'),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+
+                        const SizedBox(height: 48),
+                        const Divider(color: Colors.white24),
+                        const SizedBox(height: 16),
+                        const Text('DEMO ACCOUNTS', style: TextStyle(color: Colors.white54, fontSize: 12)),
+                        const SizedBox(height: 8),
+                        Wrap(
+                          spacing: 8,
+                          runSpacing: 8,
+                          alignment: WrapAlignment.center,
+                          children: [
+                            ActionChip(
+                              label: const Text('Demo Officer'),
+                              onPressed: _autofillDemoOfficer,
+                              backgroundColor: Colors.white10,
+                              labelStyle: const TextStyle(color: Colors.white),
+                            ),
+                            ActionChip(
+                              label: const Text('Demo Supervisor'),
+                              onPressed: _autofillDemoSupervisor,
+                              backgroundColor: Colors.white10,
+                              labelStyle: const TextStyle(color: Colors.white),
+                            ),
+                            ActionChip(
+                              label: const Text('Demo User'),
+                              onPressed: _autofillDemoUser,
+                              backgroundColor: Colors.white10,
+                              labelStyle: const TextStyle(color: Colors.white),
+>>>>>>> origin/main
                             ),
                           ],
                         ),
