@@ -57,7 +57,7 @@ async def upload_evidence_endpoint(
     final_address = address
     if not final_address:
         try:
-            headers = {"User-Agent": "GeoEvidence-Backend/1.0"}
+            headers = {"User-Agent": "Capturovert-Backend/1.0"}
             resp = requests.get(
                 f"https://nominatim.openstreetmap.org/reverse?format=json&lat={latitude}&lon={longitude}",
                 headers=headers,

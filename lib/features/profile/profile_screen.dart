@@ -323,7 +323,7 @@ class ProfileScreen extends StatelessWidget {
               // Build Version Footer
               Center(
                 child: Text(
-                  'GeoEvidence v2.4.1 · Build 20260814',
+                  'Capturovert v2.4.1 · Build 20260814',
                   style: GoogleFonts.jetBrainsMono(
                     color: const Color(0xFF475569),
                     fontSize: 11,

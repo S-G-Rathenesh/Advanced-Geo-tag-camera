@@ -1,3 +1,5 @@
+import 'package:flutter/foundation.dart';
+
 /// User role for Role-Based Access Control.
 enum UserRole {
   officer,
@@ -44,10 +46,19 @@ class UserModel {
   }
 
   static UserRole _parseRole(String? roleStr) {
-    if (roleStr == null) return UserRole.user;
+    if (roleStr == null) {
+      debugPrint('[UserModel] Warning: Null role received, defaulting to USER');
+      return UserRole.user;
+    }
+    
     final r = roleStr.toLowerCase();
     if (r == 'officer') return UserRole.officer;
     if (r == 'supervisor') return UserRole.supervisor;
+    
+    if (r != 'user') {
+      debugPrint('[UserModel] Warning: Unknown role "$roleStr" received, defaulting to USER for safety');
+    }
+    
     return UserRole.user;
   }
 

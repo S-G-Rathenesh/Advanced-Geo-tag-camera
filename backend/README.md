@@ -1,6 +1,6 @@
-# GeoEvidence Backend (FastAPI + PostgreSQL)
+# Capturovert Backend (FastAPI + PostgreSQL)
 
-This is the Stage 2 backend for the GeoEvidence Flutter prototype.
+This is the Stage 2 backend for the Capturovert Flutter prototype.
 
 ## Requirements
 - Python 3.12+
@@ -9,9 +9,9 @@ This is the Stage 2 backend for the GeoEvidence Flutter prototype.
 ## Setup Instructions
 
 1. **Database Setup**
-   Ensure PostgreSQL is running locally. Create a database named `geo_evidence`.
+   Ensure PostgreSQL is running locally. Create a database named `capturovert`.
    ```bash
-   psql -U postgres -c "CREATE DATABASE geo_evidence;"
+   psql -U postgres -c "CREATE DATABASE capturovert;"
    ```
 
 2. **Environment Configuration**

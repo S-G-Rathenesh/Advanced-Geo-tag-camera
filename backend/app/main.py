@@ -33,6 +33,13 @@ def init_db():
                 is_active=True
             )
             db.add(officer)
+        else:
+            officer.username = "demo_officer"
+            officer.password_hash = get_password_hash("password123")
+            officer.name = "Demo Officer"
+            officer.department = "Field Ops"
+            officer.role_id = roles["OFFICER"].id
+            officer.is_active = True
             
         # Demo Supervisor
         supervisor = db.query(User).filter(User.email == "demo.supervisor@gmail.com").first()
@@ -48,9 +55,14 @@ def init_db():
                 is_active=True
             )
             db.add(supervisor)
-        elif not supervisor.username:
+        else:
             supervisor.username = "demo_supervisor"
             supervisor.password_hash = get_password_hash("password123")
+            supervisor.google_subject_id = "demo_google_sup_123"
+            supervisor.name = "Demo Supervisor"
+            supervisor.department = "Management"
+            supervisor.role_id = roles["SUPERVISOR"].id
+            supervisor.is_active = True
             
         # Demo Users
         for i in range(1, 4):
@@ -68,9 +80,14 @@ def init_db():
                     is_active=True
                 )
                 db.add(user)
-            elif not user.username:
+            else:
                 user.username = f"demo_user{i}"
                 user.password_hash = get_password_hash("password123")
+                user.google_subject_id = f"demo_google_user_{i}"
+                user.name = f"Demo User {i}"
+                user.department = "Field Ops"
+                user.role_id = roles["USER"].id
+                user.is_active = True
 
         db.commit()
     finally:
@@ -82,8 +99,8 @@ async def lifespan(app: FastAPI):
     yield
 
 app = FastAPI(
-    title="GeoEvidence API",
-    description="Backend API for the GeoEvidence Prototype",
+    title="Capturovert API",
+    description="Backend API for the Capturovert Prototype",
     version="1.0.0",
     lifespan=lifespan
 )
@@ -104,4 +121,4 @@ app.include_router(health.router, prefix="/api/v1/health", tags=["health"])
 
 @app.get("/")
 def root():
-    return {"message": "Welcome to GeoEvidence API"}
+    return {"message": "Welcome to Capturovert API"}

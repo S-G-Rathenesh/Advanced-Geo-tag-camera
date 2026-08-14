@@ -1,7 +1,7 @@
 @echo off
 setlocal enabledelayedexpansion
 
-title GeoEvidence Launcher
+title Capturovert Launcher
 color 0A
 
 echo =======================================================================
@@ -43,8 +43,8 @@ if not exist "pubspec.lock" (
 )
 
 echo.
-echo [3/3] Starting GeoEvidence FastAPI Backend...
-start "GeoEvidence FastAPI Backend (Port 8000)" cmd /k "cd /d "%~dp0backend" && call venv\Scripts\activate.bat && python -m uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload"
+echo [3/3] Starting Capturovert FastAPI Backend...
+start "Capturovert FastAPI Backend (Port 8000)" cmd /k "cd /d "%~dp0backend" && call venv\Scripts\activate.bat && python -m uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload"
 
 echo     Backend server launching on http://127.0.0.1:8000 (0.0.0.0:8000) ...
 echo.
@@ -90,11 +90,11 @@ where adb >nul 2>nul
 if %errorlevel% equ 0 (
     adb reverse tcp:8000 tcp:8000 >nul 2>nul
     echo     Port 8000 reverse proxy configured.
-    echo     Opening GeoEvidence app...
-    adb shell monkey -p com.geotag.evidence.geo_evidence -c android.intent.category.LAUNCHER 1 >nul 2>nul
+    echo     Opening Capturovert app...
+    adb shell monkey -p com.geotag.evidence.capturovert -c android.intent.category.LAUNCHER 1 >nul 2>nul
     echo.
     echo =======================================================================
-    echo [SUCCESS] GeoEvidence is now open on your phone!
+    echo [SUCCESS] Capturovert is now open on your phone!
     echo Backend is connected at http://127.0.0.1:8000
     echo =======================================================================
 ) else (
@@ -113,20 +113,20 @@ if %errorlevel% equ 0 (
     echo     Port 8000 reversed successfully for USB-connected Android device.
 )
 echo.
-echo Starting GeoEvidence on Android (Debug Mode with Hot Reload)...
+echo Starting Capturovert on Android (Debug Mode with Hot Reload)...
 call flutter run
 goto finish
 
 :run_windows
 echo.
-echo Starting GeoEvidence on Windows Desktop...
+echo Starting Capturovert on Windows Desktop...
 echo (Note: Windows Developer Mode must be ON for Flutter desktop symlinks)
 call flutter run -d windows
 goto finish
 
 :run_chrome
 echo.
-echo Starting GeoEvidence on Chrome...
+echo Starting Capturovert on Chrome...
 call flutter run -d chrome
 goto finish
 
@@ -148,5 +148,5 @@ goto menu
 
 :finish
 echo.
-echo GeoEvidence launcher finished.
+echo Capturovert launcher finished.
 pause

@@ -47,7 +47,7 @@ class _CaptureConfirmationScreenState
       final url = Uri.parse(
           'https://nominatim.openstreetmap.org/reverse?format=json&lat=$lat&lon=$lon');
       final response = await http.get(url, headers: {
-        'User-Agent': 'GeoEvidence-App/1.0',
+        'User-Agent': 'Capturovert-App/1.0',
       }).timeout(const Duration(seconds: 5));
 
       if (response.statusCode == 200) {

@@ -18,7 +18,7 @@ def upload_evidence(file_bytes: bytes, capture_id: str, context: dict = None) ->
         response = cloudinary.uploader.upload(
             file_bytes,
             resource_type="raw", # Store as raw binary file
-            public_id=f"geo_evidence/{capture_id}",
+            public_id=f"capturovert/{capture_id}",
             context=context
         )
         return response

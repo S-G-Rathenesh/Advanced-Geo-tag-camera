@@ -1,3 +1,5 @@
+import 'package:flutter/foundation.dart';
+
 /// App-wide constants for the Geo Evidence application.
 ///
 /// All configurable thresholds and identifiers are centralized here
@@ -6,13 +8,17 @@ class AppConstants {
   AppConstants._();
 
   // 🛡️ App Identity 🛡️🛡️🛡️🛡️🛡️🛡️🛡️🛡️🛡️🛡️🛡️🛡️🛡️🛡️🛡️🛡️🛡️🛡️🛡️🛡️🛡️🛡️🛡️🛡️🛡️🛡️🛡️🛡️🛡️🛡️🛡️🛡️🛡️🛡️🛡️🛡️🛡️🛡️🛡️🛡️🛡️🛡️🛡️🛡️🛡️🛡️🛡️🛡️🛡️🛡️
-  static const String appName = 'GeoEvidence';
+  static const String appName = 'Capturovert';
   static const String appVersion = '1.0.0';
   static const String appTagline = 'Secure Field Evidence Capture';
 
   // 🌐 API Configuration 🌐🌐🌐🌐🌐🌐🌐🌐🌐🌐🌐🌐🌐🌐🌐🌐🌐🌐🌐🌐🌐🌐🌐🌐🌐🌐🌐🌐🌐🌐🌐🌐🌐🌐🌐🌐🌐🌐🌐🌐🌐🌐🌐🌐🌐🌐
-  /// Hosted FastAPI backend on Render.
+  /// Hosted FastAPI backend on Render or localhost for debug.
   static String get apiBaseUrl {
+    if (kDebugMode) {
+      // We use localhost for debug mode, but since web requires IP or localhost we just use localhost.
+      return 'http://127.0.0.1:8000/api/v1';
+    }
     return 'https://advanced-geo-tag-camera.onrender.com/api/v1';
   }
   static const Duration apiTimeout = Duration(seconds: 30);
@@ -38,7 +44,7 @@ class AppConstants {
   static const String encryptionKeyStorageKey = 'evidence_enc_key';
 
   // ── Local Database ────────────────────────────────────────────────────
-  static const String databaseName = 'geo_evidence.db';
+  static const String databaseName = 'capturovert.db';
   static const int databaseVersion = 1;
   static const String evidenceTable = 'evidence_queue';
 }

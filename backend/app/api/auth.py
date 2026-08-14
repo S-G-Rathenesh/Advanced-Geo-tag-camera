@@ -32,7 +32,7 @@ def demo_login(request: DemoLoginRequest, db: Session = Depends(get_db)):
     if not user or not user.is_active:
         raise HTTPException(status_code=404, detail="Demo account not found or inactive")
         
-    access_token = create_access_token(subject=user.id)
+    access_token = create_access_token(subject=user.id, role=user.role.name)
     user.last_login_at = datetime.now(timezone.utc)
     db.commit()
     
@@ -60,7 +60,7 @@ def officer_login(request: LoginRequest, db: Session = Depends(get_db)):
         log_audit_event(db, user_id=user.id, action="OFFICER_LOGIN_FAILURE", details="Inactive account or not an officer")
         raise HTTPException(status_code=403, detail="Unauthorized access")
 
-    access_token = create_access_token(subject=user.id)
+    access_token = create_access_token(subject=user.id, role=user.role.name)
     
     user.last_login_at = datetime.now(timezone.utc)
     db.commit()
@@ -130,7 +130,7 @@ def google_auth(request: GoogleAuthRequest, db: Session = Depends(get_db)):
         log_audit_event(db, user_id=user.id, action="GOOGLE_LOGIN_FAILURE", details="Inactive account")
         raise HTTPException(status_code=403, detail="Inactive user")
         
-    access_token = create_access_token(subject=user.id)
+    access_token = create_access_token(subject=user.id, role=user.role.name)
     user.last_login_at = datetime.now(timezone.utc)
     db.commit()
     

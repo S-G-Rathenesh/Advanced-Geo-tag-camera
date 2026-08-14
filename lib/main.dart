@@ -21,11 +21,11 @@ import 'services/api_service.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
-  runApp(const GeoEvidenceApp());
+  runApp(const CapturovertApp());
 }
 
-class GeoEvidenceApp extends StatelessWidget {
-  const GeoEvidenceApp({super.key});
+class CapturovertApp extends StatelessWidget {
+  const CapturovertApp({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -37,7 +37,7 @@ class GeoEvidenceApp extends StatelessWidget {
         Provider(create: (_) => ApiService()),
       ],
       child: MaterialApp(
-        title: 'GeoEvidence',
+        title: 'Capturovert',
         debugShowCheckedModeBanner: false,
         theme: AppTheme.darkTheme,
         darkTheme: AppTheme.darkTheme,

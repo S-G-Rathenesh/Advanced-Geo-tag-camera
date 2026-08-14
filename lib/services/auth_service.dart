@@ -90,6 +90,8 @@ class AuthService extends ChangeNotifier {
         await _secureStorage.saveToken(token);
         _currentUser = UserModel.fromJson(userJson);
         
+        final jwtRole = _decodeJwtRole(token);
+        debugPrint('[AUTH] JWT Embedded Role: $jwtRole');
         debugPrint('[AUTH] Demo login success: ${_currentUser?.roleLabel}');
         _isLoading = false;
         notifyListeners();
@@ -205,6 +207,9 @@ class AuthService extends ChangeNotifier {
       if (response.statusCode == 200) {
         final userJson = jsonDecode(response.body) as Map<String, dynamic>;
         _currentUser = UserModel.fromJson(userJson);
+        
+        final jwtRole = _decodeJwtRole(token);
+        debugPrint('[AUTH] JWT Embedded Role: $jwtRole');
         debugPrint('[AUTH] Auto-login restored: ${_currentUser?.roleLabel}');
         notifyListeners();
         return true;
@@ -225,5 +230,23 @@ class AuthService extends ChangeNotifier {
     _currentUser = null;
     _error = null;
     notifyListeners();
+  }
+
+  String? _decodeJwtRole(String token) {
+    try {
+      final parts = token.split('.');
+      if (parts.length != 3) return null;
+      
+      final payload = parts[1];
+      var normalized = base64Url.normalize(payload);
+      final decodedBytes = base64Url.decode(normalized);
+      final decodedString = utf8.decode(decodedBytes);
+      final json = jsonDecode(decodedString);
+      
+      return json['role'] as String?;
+    } catch (e) {
+      debugPrint('[AUTH] Error decoding JWT: $e');
+      return null;
+    }
   }
 }

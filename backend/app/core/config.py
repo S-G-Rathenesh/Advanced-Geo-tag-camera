@@ -3,12 +3,12 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 
 class Settings(BaseSettings):
     # Database
-    DATABASE_URL: str = "sqlite:///./geo_evidence.db"
+    DATABASE_URL: str = "sqlite:///./capturovert.db"
     POSTGRES_USER: str = "postgres"
     POSTGRES_PASSWORD: str = "postgres"
     POSTGRES_SERVER: str = "localhost"
     POSTGRES_PORT: str = "5432"
-    POSTGRES_DB: str = "geo_evidence"
+    POSTGRES_DB: str = "capturovert"
 
     # Auth
     SECRET_KEY: str = "supersecretkey_change_in_production"
