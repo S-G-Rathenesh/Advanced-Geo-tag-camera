@@ -60,6 +60,47 @@ class AuthService extends ChangeNotifier {
         return LoginResponse.error(_error!);
       }
     } catch (e) {
+      _error = 'Network error: $e';
+      notifyListeners();
+      return LoginResponse.error(_error!);
+    }
+  }
+
+  /// 1-Tap Demo login via /auth/demo
+  Future<LoginResponse> demoLogin(String username) async {
+    _isLoading = true;
+    _error = null;
+    notifyListeners();
+
+    try {
+      final url = Uri.parse('${AppConstants.apiBaseUrl}/auth/demo');
+      final response = await http.post(
+        url,
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({
+          'username': username,
+        }),
+      );
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        final token = data['access_token'] as String;
+        final userJson = data['user'] as Map<String, dynamic>;
+
+        await _secureStorage.saveToken(token);
+        _currentUser = UserModel.fromJson(userJson);
+        
+        debugPrint('[AUTH] Demo login success: ${_currentUser?.roleLabel}');
+        _isLoading = false;
+        notifyListeners();
+        return LoginResponse(success: true, token: token, user: _currentUser);
+      } else {
+        _isLoading = false;
+        _error = 'Demo Login Failed: ${response.statusCode}';
+        notifyListeners();
+        return LoginResponse.error(_error!);
+      }
+    } catch (e) {
       _isLoading = false;
       _error = 'Network error: $e';
       notifyListeners();

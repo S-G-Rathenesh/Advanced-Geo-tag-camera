@@ -70,18 +70,10 @@ class _LoginScreenState extends State<LoginScreen> {
     });
   }
 
-  void _autofillDemoSupervisor() {
-    setState(() {
-      _usernameController.text = 'demo_supervisor';
-      _passwordController.text = 'password123';
-    });
-  }
-
-  void _autofillDemoUser() {
-    setState(() {
-      _usernameController.text = 'demo_user';
-      _passwordController.text = 'password123';
-    });
+  Future<void> _handleDemoLogin(String username) async {
+    final authService = context.read<AuthService>();
+    final response = await authService.demoLogin(username);
+    _handleResponse(response);
   }
 
   @override
@@ -474,7 +466,8 @@ class _LoginScreenState extends State<LoginScreen> {
                         name: 'Priya Sharma',
                         badgeColor: const Color(0xFF451A03),
                         textColor: const Color(0xFFF97316),
-                        onTap: _autofillDemoSupervisor,
+                        onTap: () => _handleDemoLogin('demo_supervisor'),
+                        subtext: '1-Tap Login',
                       ),
                     ),
                     const SizedBox(width: 8),
@@ -484,7 +477,8 @@ class _LoginScreenState extends State<LoginScreen> {
                         name: 'Marcus Webb',
                         badgeColor: const Color(0xFF0C4A6E),
                         textColor: const Color(0xFF38BDF8),
-                        onTap: _autofillDemoUser,
+                        onTap: () => _handleDemoLogin('demo_user1'),
+                        subtext: '1-Tap Login',
                       ),
                     ),
                   ],
@@ -515,6 +509,7 @@ class _LoginScreenState extends State<LoginScreen> {
     required Color badgeColor,
     required Color textColor,
     required VoidCallback onTap,
+    String subtext = '1-Tap Autofill',
   }) {
     return GestureDetector(
       onTap: onTap,
@@ -557,7 +552,7 @@ class _LoginScreenState extends State<LoginScreen> {
             ),
             const SizedBox(height: 2),
             Text(
-              '1-Tap Autofill',
+              subtext,
               style: GoogleFonts.inter(
                 color: const Color(0xFF64748B),
                 fontSize: 9.5,
