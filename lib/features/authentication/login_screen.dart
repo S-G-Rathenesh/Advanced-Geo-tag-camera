@@ -67,9 +67,9 @@ class _LoginScreenState extends State<LoginScreen>
     _handleResponse(response);
   }
 
-  Future<void> _handleGoogleLogin(String email, String sub, String name) async {
+  Future<void> _handleGoogleLogin() async {
     final authService = context.read<AuthService>();
-    final response = await authService.googleLogin(email, sub, name);
+    final response = await authService.googleLogin();
     _handleResponse(response);
   }
 
@@ -98,45 +98,7 @@ class _LoginScreenState extends State<LoginScreen>
     // According to instructions, autofill only, user must click login.
   }
 
-  void _autofillDemoSupervisor() {
-    // For Google mock, we can just trigger it since there is no form field for it normally.
-    _handleGoogleLogin('demo.supervisor@gmail.com', 'demo_google_sup_123', 'Demo Supervisor');
-  }
 
-  void _autofillDemoUser() {
-    _handleGoogleLogin('demo.user1@gmail.com', 'demo_google_user_1', 'Demo User 1');
-  }
-
-  void _showMockGoogleDialog() {
-    final emailController = TextEditingController();
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text("Mock Google Login"),
-        content: TextField(
-          controller: emailController,
-          decoration: const InputDecoration(hintText: "Enter Gmail address"),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text("Cancel"),
-          ),
-          FilledButton(
-            onPressed: () {
-              final email = emailController.text.trim();
-              if (email.isNotEmpty) {
-                Navigator.pop(context);
-                // Create a mock sub based on email to make it deterministic
-                _handleGoogleLogin(email, 'mock_sub_$email', 'Mock User');
-              }
-            },
-            child: const Text("Sign In"),
-          ),
-        ],
-      ),
-    );
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -183,7 +145,7 @@ class _LoginScreenState extends State<LoginScreen>
                           width: double.infinity,
                           height: 56,
                           child: FilledButton.icon(
-                            onPressed: _showMockGoogleDialog,
+                            onPressed: _handleGoogleLogin,
                             icon: const Icon(Icons.g_mobiledata, size: 32),
                             label: const Text('Continue with Google'),
                             style: FilledButton.styleFrom(
@@ -269,18 +231,6 @@ class _LoginScreenState extends State<LoginScreen>
                             ActionChip(
                               label: const Text('Demo Officer'),
                               onPressed: _autofillDemoOfficer,
-                              backgroundColor: Colors.white10,
-                              labelStyle: const TextStyle(color: Colors.white),
-                            ),
-                            ActionChip(
-                              label: const Text('Demo Supervisor'),
-                              onPressed: _autofillDemoSupervisor,
-                              backgroundColor: Colors.white10,
-                              labelStyle: const TextStyle(color: Colors.white),
-                            ),
-                            ActionChip(
-                              label: const Text('Demo User'),
-                              onPressed: _autofillDemoUser,
                               backgroundColor: Colors.white10,
                               labelStyle: const TextStyle(color: Colors.white),
                             ),
