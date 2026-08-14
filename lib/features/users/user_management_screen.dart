@@ -204,10 +204,6 @@ class _UserManagementScreenState extends State<UserManagementScreen> {
                 ),
               );
 
-    if (widget.showBottomNav) {
-      return GradientBackground(child: body);
-    }
-
     return Scaffold(
       appBar: const SecureAppBar(title: 'User Management'),
       body: GradientBackground(child: body),

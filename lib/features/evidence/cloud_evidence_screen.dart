@@ -165,10 +165,6 @@ class _CloudEvidenceScreenState extends State<CloudEvidenceScreen> {
                     ),
                   );
 
-    if (widget.showBottomNav) {
-      return GradientBackground(child: body);
-    }
-
     return Scaffold(
       appBar: SecureAppBar(title: widget.title),
       body: GradientBackground(child: body),
