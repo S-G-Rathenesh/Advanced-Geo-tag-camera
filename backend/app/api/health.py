@@ -19,13 +19,3 @@ def health_check_db(db: Session = Depends(get_db)):
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Database connection failed."
         )
-
-@router.get("/migrate")
-def migrate_db(db: Session = Depends(get_db)):
-    try:
-        db.execute(text("ALTER TABLE evidence ADD COLUMN IF NOT EXISTS address VARCHAR;"))
-        db.commit()
-        return {"status": "Migration successful, address column added."}
-    except Exception as e:
-        db.rollback()
-        return {"status": "Failed", "error": str(e)}
