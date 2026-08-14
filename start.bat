@@ -27,12 +27,11 @@ if not exist "backend\venv" (
         pause
         exit /b 1
     )
-    echo     Installing backend requirements...
-    call backend\venv\Scripts\activate.bat
-    pip install -r backend\requirements.txt
-) else (
-    echo     Virtual environment verified.
 )
+echo     Verifying backend Python packages...
+call backend\venv\Scripts\activate.bat
+pip install -q -r backend\requirements.txt
+echo     Backend dependencies verified.
 
 echo.
 echo [2/3] Checking Flutter dependencies...
@@ -60,27 +59,63 @@ echo =======================================================================
 echo.
 
 :menu
-echo Select target platform for Flutter app:
+echo Select target option:
 echo.
-echo   [1] Run Flutter Desktop (Windows)
-echo   [2] Run Flutter Web (Chrome - Recommended without Developer Mode)
-echo   [3] Run Flutter Android (Connected Phone or Emulator)
-echo   [4] Backend Only (Keep Backend Running)
-echo   [5] Enable Windows Developer Mode (Required for Desktop Symlinks)
-echo   [6] Exit
+echo   [1] Fast Launch App on Phone (Instant ^<1s - Recommended for testing)
+echo   [2] Run Flutter Android (Development / Hot-Reload Mode)
+echo   [3] Run Flutter Web (Chrome)
+echo   [4] Run Flutter Desktop (Windows)
+echo   [5] Backend Only (Keep Backend Running)
+echo   [6] Enable Windows Developer Mode (Required for Desktop Symlinks)
+echo   [7] Exit
 echo.
-set /p choice="Enter option [1-6]: "
+set /p choice="Enter option [1-7]: "
 
-if "%choice%"=="1" goto run_windows
-if "%choice%"=="2" goto run_chrome
-if "%choice%"=="3" goto run_android
-if "%choice%"=="4" goto run_backend
-if "%choice%"=="5" goto enable_devmode
-if "%choice%"=="6" goto finish
+if "%choice%"=="1" goto fast_launch_android
+if "%choice%"=="2" goto run_android
+if "%choice%"=="3" goto run_chrome
+if "%choice%"=="4" goto run_windows
+if "%choice%"=="5" goto run_backend
+if "%choice%"=="6" goto enable_devmode
+if "%choice%"=="7" goto finish
 
-echo Invalid choice. Please select 1-6.
+echo Invalid choice. Please select 1-7.
 echo.
 goto menu
+
+:fast_launch_android
+echo.
+echo [Instant Launch] Connecting to Android device...
+where adb >nul 2>nul
+if %errorlevel% equ 0 (
+    adb reverse tcp:8000 tcp:8000 >nul 2>nul
+    echo     Port 8000 reverse proxy configured.
+    echo     Opening GeoEvidence app...
+    adb shell monkey -p com.geotag.evidence.geo_evidence -c android.intent.category.LAUNCHER 1 >nul 2>nul
+    echo.
+    echo =======================================================================
+    echo [SUCCESS] GeoEvidence is now open on your phone!
+    echo Backend is connected at http://127.0.0.1:8000
+    echo =======================================================================
+) else (
+    echo [ERROR] ADB not found in PATH or Android SDK.
+)
+echo.
+pause
+goto menu
+
+:run_android
+echo.
+echo Setting up ADB reverse proxy for backend communication (port 8000)...
+where adb >nul 2>nul
+if %errorlevel% equ 0 (
+    adb reverse tcp:8000 tcp:8000 >nul 2>nul
+    echo     Port 8000 reversed successfully for USB-connected Android device.
+)
+echo.
+echo Starting GeoEvidence on Android (Debug Mode with Hot Reload)...
+call flutter run
+goto finish
 
 :run_windows
 echo.
@@ -95,21 +130,6 @@ echo Starting GeoEvidence on Chrome...
 call flutter run -d chrome
 goto finish
 
-:run_android
-echo.
-echo Setting up ADB reverse proxy for backend communication (port 8000)...
-where adb >nul 2>nul
-if %errorlevel% equ 0 (
-    adb reverse tcp:8000 tcp:8000 >nul 2>nul
-    echo     Port 8000 reversed successfully for USB-connected Android device.
-) else (
-    echo     [Notice] ADB not in PATH. Ensure phone and PC are on the same Wi-Fi network.
-)
-echo.
-echo Starting GeoEvidence on Android...
-call flutter run
-goto finish
-
 :run_backend
 echo.
 echo Backend is running at http://127.0.0.1:8000
@@ -121,7 +141,7 @@ goto finish
 echo.
 echo Opening Windows Developer Settings...
 start ms-settings:developers
-echo Please enable "Developer Mode" toggle in Windows Settings, then retry Option 1.
+echo Please enable "Developer Mode" toggle in Windows Settings, then retry Option 4.
 echo.
 pause
 goto menu

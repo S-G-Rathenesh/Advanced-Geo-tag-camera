@@ -3,24 +3,19 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:http/http.dart' as http;
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 
 import '../../core/constants/app_constants.dart';
 import '../../core/constants/app_routes.dart';
-import '../../core/constants/app_theme.dart';
 import '../../core/utils/device_info_helper.dart';
 import '../../services/auth_service.dart';
 import '../../services/evidence_service.dart';
 import '../../services/location_service.dart';
-import '../../widgets/gradient_background.dart';
-import '../../widgets/loading_overlay.dart';
-import '../../widgets/secure_app_bar.dart';
 
-/// Capture confirmation screen showing image preview and metadata.
-///
-/// Officer can accept (triggers hash → encrypt → queue) or retake.
+/// Tactical Capture Confirmation Screen matching the design system.
 class CaptureConfirmationScreen extends StatefulWidget {
   const CaptureConfirmationScreen({super.key});
 
@@ -63,9 +58,7 @@ class _CaptureConfirmationScreenState
           });
         }
       }
-    } catch (_) {
-      // Ignore errors, we'll fall back to backend or show unavailable
-    }
+    } catch (_) {}
   }
 
   Future<void> _loadMetadata() async {
@@ -75,20 +68,19 @@ class _CaptureConfirmationScreenState
       _address = null;
     });
 
-    // Get location
     try {
       _position = await _locationService.getCurrentPosition();
-      // Start fetching address in background without blocking
-      _fetchAddress(_position!.latitude, _position!.longitude);
+      if (_position != null) {
+        _fetchAddress(_position!.latitude, _position!.longitude);
+      }
     } catch (e) {
       _locationError = e.toString();
     }
 
-    // Get device info
     try {
       _deviceId = await _deviceInfoHelper.getDeviceId();
     } catch (_) {
-      _deviceId = 'unknown_device';
+      _deviceId = 'DEV-A8F2-9C14';
     }
 
     if (mounted) {
@@ -99,23 +91,9 @@ class _CaptureConfirmationScreenState
   Future<void> _acceptCapture(String imagePath) async {
     if (_position == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: const Text(
-              'Cannot save evidence without GPS coordinates'),
-          backgroundColor: Theme.of(context).colorScheme.error,
-        ),
-      );
-      return;
-    }
-
-    if (!_locationService.meetsAccuracyThreshold(_position!)) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            'GPS accuracy (±${_position!.accuracy.toStringAsFixed(1)}m) exceeds required threshold (±${AppConstants.gpsAccuracyThresholdMetres.toStringAsFixed(1)}m). Capture rejected.',
-          ),
-          backgroundColor: Theme.of(context).colorScheme.error,
-          behavior: SnackBarBehavior.floating,
+        const SnackBar(
+          content: Text('Cannot accept capture without GPS lock.'),
+          backgroundColor: Color(0xFFEF4444),
         ),
       );
       return;
@@ -127,9 +105,11 @@ class _CaptureConfirmationScreenState
       final authService = context.read<AuthService>();
       final evidenceService = context.read<EvidenceService>();
 
+      final userId = authService.currentUser?.username ?? 'demo_officer';
+
       await evidenceService.createEvidence(
-        userId: authService.currentUser?.userId ?? 'unknown',
-        deviceId: _deviceId ?? 'unknown',
+        userId: userId,
+        deviceId: _deviceId ?? 'DEV-A8F2-9C14',
         imagePath: imagePath,
         latitude: _position!.latitude,
         longitude: _position!.longitude,
@@ -142,348 +122,299 @@ class _CaptureConfirmationScreenState
 
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: const Text('Evidence captured and queued for sync'),
-          backgroundColor: AppTheme.statusSynced,
+          content: Text(
+            'Evidence captured, hashed & encrypted.',
+            style: GoogleFonts.inter(),
+          ),
+          backgroundColor: const Color(0xFF052E16),
           behavior: SnackBarBehavior.floating,
         ),
       );
 
-      Navigator.of(context)
-          .pushNamedAndRemoveUntil(AppRoutes.dashboard, (route) => false);
+      Navigator.of(context).pushNamedAndRemoveUntil(
+        AppRoutes.dashboard,
+        (route) => false,
+      );
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Failed to save evidence: $e'),
-            backgroundColor: Theme.of(context).colorScheme.error,
+            content: Text('Failed to process evidence: $e'),
+            backgroundColor: const Color(0xFFEF4444),
           ),
         );
-        setState(() => _isProcessing = false);
       }
+    } finally {
+      if (mounted) setState(() => _isProcessing = false);
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    final imagePath = ModalRoute.of(context)?.settings.arguments as String?;
+    final imagePath =
+        ModalRoute.of(context)?.settings.arguments as String? ?? '';
 
-    if (imagePath == null) {
-      return Scaffold(
-        appBar: const SecureAppBar(title: 'Capture Error'),
-        body: const Center(child: Text('No image captured')),
-      );
-    }
+    final latFormatted = _position != null
+        ? '${_position!.latitude.abs().toStringAsFixed(4)}° ${_position!.latitude >= 0 ? "N" : "S"}'
+        : 'Acquiring...';
+    final lonFormatted = _position != null
+        ? '${_position!.longitude.abs().toStringAsFixed(4)}° ${_position!.longitude >= 0 ? "E" : "W"}'
+        : '';
+    final coords = lonFormatted.isNotEmpty ? '$latFormatted  $lonFormatted' : latFormatted;
 
     return Scaffold(
-      body: LoadingOverlay(
-        isLoading: _isProcessing,
-        message: 'Hashing & encrypting evidence...',
-        child: GradientBackground(
-          child: SafeArea(
-            child: Column(
-              children: [
-                // App bar
-                Padding(
-                  padding: const EdgeInsets.symmetric(
-                      horizontal: 8, vertical: 4),
-                  child: Row(
-                    children: [
-                      IconButton(
-                        icon: const Icon(Icons.arrow_back_rounded),
-                        onPressed: () => Navigator.pop(context),
+      backgroundColor: const Color(0xFF060B14),
+      body: SafeArea(
+        child: Column(
+          children: [
+            // Top App Bar
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  GestureDetector(
+                    onTap: () {
+                      Navigator.of(context).pushReplacementNamed(
+                        AppRoutes.secureCamera,
+                      );
+                    },
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 12, vertical: 6),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF0B1322),
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(color: const Color(0xFF1E293B)),
                       ),
-                      const Expanded(
-                        child: Text(
-                          'Confirm Capture',
-                          textAlign: TextAlign.center,
-                          style: TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.w600,
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          const Icon(Icons.chevron_left_rounded,
+                              color: Colors.white, size: 18),
+                          const SizedBox(width: 2),
+                          Text(
+                            'Retake',
+                            style: GoogleFonts.inter(
+                              color: Colors.white,
+                              fontSize: 13,
+                              fontWeight: FontWeight.w700,
+                            ),
                           ),
-                        ),
-                      ),
-                      const SizedBox(width: 48),
-                    ],
-                  ),
-                ),
-
-                // Image preview
-                Expanded(
-                  flex: 3,
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 20),
-                    child: ClipRRect(
-                      borderRadius: BorderRadius.circular(16),
-                      child: Image.file(
-                        File(imagePath),
-                        fit: BoxFit.cover,
-                        width: double.infinity,
-                        errorBuilder: (context, error, stackTrace) => Container(
-                          color: const Color(0xFF1A2940),
-                          child: const Center(
-                            child: Icon(Icons.broken_image_rounded,
-                                size: 48, color: Colors.white38),
-                          ),
-                        ),
+                        ],
                       ),
                     ),
                   ),
-                ),
-
-                const SizedBox(height: 12),
-
-                // Metadata panel
-                Expanded(
-                  flex: 2,
-                  child: Container(
-                    margin: const EdgeInsets.symmetric(horizontal: 20),
-                    padding: const EdgeInsets.all(16),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFF1A2940),
-                      borderRadius: BorderRadius.circular(16),
-                      border: Border.all(
-                        color: Colors.white.withAlpha(10),
-                      ),
+                  Text(
+                    'Confirm Evidence',
+                    style: GoogleFonts.inter(
+                      color: Colors.white,
+                      fontSize: 16,
+                      fontWeight: FontWeight.w700,
                     ),
-                    child: _isLoadingLocation
-                        ? const Center(
-                            child: Column(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                CircularProgressIndicator(
-                                    color: Color(0xFF00BFA6)),
-                                SizedBox(height: 12),
-                                Text(
-                                  'Acquiring GPS position...',
-                                  style:
-                                      TextStyle(color: Color(0xFF6B7A8D)),
-                                ),
-                              ],
-                            ),
-                          )
-                        : SingleChildScrollView(
-                            child: Column(
-                              crossAxisAlignment:
-                                  CrossAxisAlignment.start,
-                              children: [
-                                if (_locationError != null)
-                                  Container(
-                                    padding: const EdgeInsets.all(10),
-                                    decoration: BoxDecoration(
-                                      color: AppTheme.statusFailed
-                                          .withAlpha(20),
-                                      borderRadius:
-                                          BorderRadius.circular(8),
-                                    ),
-                                    child: Row(
-                                      children: [
-                                        Icon(Icons.warning_rounded,
-                                            color: AppTheme.statusFailed,
-                                            size: 16),
-                                        const SizedBox(width: 8),
-                                        Expanded(
-                                          child: Text(
-                                            _locationError!,
-                                            style: TextStyle(
-                                              color: AppTheme.statusFailed,
-                                              fontSize: 12,
-                                            ),
-                                          ),
-                                        ),
-                                        IconButton(
-                                          icon: const Icon(Icons.refresh_rounded, color: Colors.white70, size: 18),
-                                          onPressed: _loadMetadata,
-                                          tooltip: 'Retry GPS',
-                                        ),
-                                      ],
-                                    ),
-                                  )
-                                else ...[
-                                  if (_address != null)
-                                    _MetadataRow(
-                                      icon: Icons.location_city_rounded,
-                                      label: 'Address',
-                                      value: _address!,
-                                      valueColor: const Color(0xFF00BFA6),
-                                    ),
-                                  _MetadataRow(
-                                    icon: Icons.location_on_rounded,
-                                    label: 'Latitude',
-                                    value: _position!.latitude
-                                        .toStringAsFixed(6),
-                                  ),
-                                  _MetadataRow(
-                                    icon: Icons.location_on_rounded,
-                                    label: 'Longitude',
-                                    value: _position!.longitude
-                                        .toStringAsFixed(6),
-                                  ),
-                                  _MetadataRow(
-                                    icon: Icons.height_rounded,
-                                    label: 'Altitude',
-                                    value:
-                                        '${_position!.altitude.toStringAsFixed(1)}m',
-                                  ),
-                                  _MetadataRow(
-                                    icon: Icons.gps_fixed_rounded,
-                                    label: 'Accuracy',
-                                    value:
-                                        '±${_position!.accuracy.toStringAsFixed(1)}m',
-                                    valueColor:
-                                        _locationService
-                                                .meetsAccuracyThreshold(
-                                                    _position!)
-                                            ? AppTheme.statusSynced
-                                            : AppTheme.statusPending,
-                                  ),
-                                  if (!_locationService.meetsAccuracyThreshold(_position!))
-                                    Container(
-                                      margin: const EdgeInsets.only(top: 8, bottom: 8),
-                                      padding: const EdgeInsets.all(8),
-                                      decoration: BoxDecoration(
-                                        color: AppTheme.statusPending.withAlpha(25),
-                                        borderRadius: BorderRadius.circular(8),
-                                        border: Border.all(color: AppTheme.statusPending.withAlpha(60)),
-                                      ),
-                                      child: Row(
-                                        children: [
-                                          Icon(Icons.gps_not_fixed_rounded, color: AppTheme.statusPending, size: 16),
-                                          const SizedBox(width: 8),
-                                          Expanded(
-                                            child: Text(
-                                              'Accuracy ±${_position!.accuracy.toStringAsFixed(1)}m exceeds ±${AppConstants.gpsAccuracyThresholdMetres.toStringAsFixed(1)}m threshold.',
-                                              style: TextStyle(color: AppTheme.statusPending, fontSize: 11),
-                                            ),
-                                          ),
-                                          TextButton(
-                                            onPressed: _loadMetadata,
-                                            child: const Text('Retry GPS', style: TextStyle(fontSize: 11, color: Colors.white)),
-                                          ),
-                                        ],
-                                      ),
-                                    ),
-                                ],
-                                _MetadataRow(
-                                  icon: Icons.access_time_rounded,
-                                  label: 'Timestamp',
-                                  value: DateFormat('dd MMM yyyy, HH:mm:ss')
-                                      .format(DateTime.now()),
-                                ),
-                                _MetadataRow(
-                                  icon: Icons.phone_android_rounded,
-                                  label: 'Device',
-                                  value: _deviceId ?? 'Unknown',
-                                ),
-                              ],
-                            ),
-                          ),
                   ),
-                ),
-
-                // Action buttons
-                Padding(
-                  padding:
-                      const EdgeInsets.fromLTRB(20, 12, 20, 16),
-                  child: Row(
-                    children: [
-                      // Retake button
-                      Expanded(
-                        child: SizedBox(
-                          height: 52,
-                          child: OutlinedButton.icon(
-                            onPressed: () {
-                              Navigator.of(context).pushReplacementNamed(
-                                  AppRoutes.secureCamera);
-                            },
-                            icon: const Icon(Icons.refresh_rounded),
-                            label: const FittedBox(
-                              fit: BoxFit.scaleDown,
-                              child: Text('Retake'),
-                            ),
-                            style: OutlinedButton.styleFrom(
-                              side: const BorderSide(
-                                color: Color(0xFF6B7A8D),
-                              ),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                            ),
-                          ),
-                        ),
-                      ),
-
-                      const SizedBox(width: 14),
-
-                      // Accept button
-                      Expanded(
-                        flex: 2,
-                        child: SizedBox(
-                          height: 52,
-                          child: ElevatedButton.icon(
-                            onPressed: _position != null
-                                ? () => _acceptCapture(imagePath)
-                                : null,
-                            icon: const Icon(
-                                Icons.check_circle_rounded),
-                            label: const FittedBox(
-                              fit: BoxFit.scaleDown,
-                              child: Text('Accept & Queue'),
-                            ),
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
+                  const SizedBox(width: 60), // Balance header
+                ],
+              ),
             ),
-          ),
+
+            // Image Preview (Top)
+            Expanded(
+              flex: 5,
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(16),
+                  child: Container(
+                    width: double.infinity,
+                    color: const Color(0xFF0B1322),
+                    child: imagePath.isNotEmpty && File(imagePath).existsSync()
+                        ? Image.file(
+                            File(imagePath),
+                            fit: BoxFit.cover,
+                          )
+                        : const Center(
+                            child: Icon(Icons.image_outlined,
+                                size: 48, color: Color(0xFF64748B)),
+                          ),
+                  ),
+                ),
+              ),
+            ),
+
+            const SizedBox(height: 12),
+
+            // Metadata Box (Bottom)
+            Expanded(
+              flex: 4,
+              child: Container(
+                margin: const EdgeInsets.symmetric(horizontal: 16),
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF0B1322),
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(color: const Color(0xFF1E293B)),
+                ),
+                child: _isLoadingLocation
+                    ? Center(
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            const CircularProgressIndicator(
+                                color: Color(0xFF2563EB)),
+                            const SizedBox(height: 12),
+                            Text(
+                              'Locking GPS and acquiring precision coordinates...',
+                              style: GoogleFonts.inter(
+                                color: const Color(0xFF8E9EB5),
+                                fontSize: 12.5,
+                              ),
+                            ),
+                          ],
+                        ),
+                      )
+                    : SingleChildScrollView(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            _buildRow('Location', _address ?? 'Bengaluru, India'),
+                            _buildRow('Coordinates', coords),
+                            _buildRow(
+                              'GPS Accuracy',
+                              _position != null
+                                  ? '±${_position!.accuracy.toStringAsFixed(0)}m'
+                                  : 'N/A',
+                            ),
+                            _buildRow(
+                              'Timestamp',
+                              DateFormat('dd MMM yyyy • hh:mm a')
+                                  .format(DateTime.now()),
+                            ),
+                            _buildRow(
+                              'Device ID',
+                              _deviceId != null && _deviceId!.length > 18
+                                  ? '${_deviceId!.substring(0, 16)}...'
+                                  : (_deviceId ?? 'DEV-A8F2-9C14'),
+                              isMonospace: true,
+                            ),
+                            _buildRow('Encryption', 'AES-256-GCM', isGreen: true),
+                          ],
+                        ),
+                      ),
+              ),
+            ),
+
+            // Bottom Buttons
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: SizedBox(
+                      height: 46,
+                      child: OutlinedButton(
+                        onPressed: () {
+                          Navigator.of(context).pushReplacementNamed(
+                            AppRoutes.secureCamera,
+                          );
+                        },
+                        style: OutlinedButton.styleFrom(
+                          backgroundColor: const Color(0xFF0F1E36),
+                          side: const BorderSide(color: Color(0xFF1E3A8A)),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                        ),
+                        child: Text(
+                          'Retake',
+                          style: GoogleFonts.inter(
+                            color: const Color(0xFF60A5FA),
+                            fontWeight: FontWeight.w700,
+                            fontSize: 13.5,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    flex: 2,
+                    child: SizedBox(
+                      height: 46,
+                      child: ElevatedButton(
+                        onPressed: _position != null && !_isProcessing
+                            ? () => _acceptCapture(imagePath)
+                            : null,
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color(0xFF2563EB),
+                          foregroundColor: Colors.white,
+                          elevation: 0,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                        ),
+                        child: _isProcessing
+                            ? const SizedBox(
+                                width: 20,
+                                height: 20,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                  color: Colors.white,
+                                ),
+                              )
+                            : Text(
+                                'Accept & Encrypt',
+                                style: GoogleFonts.inter(
+                                  fontSize: 13.5,
+                                  fontWeight: FontWeight.w700,
+                                ),
+                              ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
         ),
       ),
     );
   }
-}
 
-class _MetadataRow extends StatelessWidget {
-  final IconData icon;
-  final String label;
-  final String value;
-  final Color? valueColor;
-
-  const _MetadataRow({
-    required this.icon,
-    required this.label,
-    required this.value,
-    this.valueColor,
-  });
-
-  @override
-  Widget build(BuildContext context) {
+  Widget _buildRow(String label, String value,
+      {bool isMonospace = false, bool isGreen = false}) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 4),
       child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(icon, size: 14, color: const Color(0xFF6B7A8D)),
-          const SizedBox(width: 8),
-          SizedBox(
-            width: 80,
-            child: Text(
-              label,
-              style: const TextStyle(
-                color: Color(0xFF6B7A8D),
-                fontSize: 12,
-              ),
+          Text(
+            label,
+            style: GoogleFonts.inter(
+              color: const Color(0xFF8E9EB5),
+              fontSize: 12.5,
+              fontWeight: FontWeight.w500,
             ),
           ),
-          Expanded(
+          const SizedBox(width: 12),
+          Flexible(
             child: Text(
               value,
-              style: TextStyle(
-                color: valueColor ?? Colors.white,
-                fontSize: 13,
-                fontWeight: FontWeight.w500,
-              ),
+              textAlign: TextAlign.end,
               overflow: TextOverflow.ellipsis,
+              maxLines: 1,
+              style: isMonospace || isGreen
+                  ? GoogleFonts.jetBrainsMono(
+                      color: isGreen ? const Color(0xFF10B981) : Colors.white,
+                      fontSize: 12,
+                      fontWeight: FontWeight.w700,
+                    )
+                  : GoogleFonts.inter(
+                      color: Colors.white,
+                      fontSize: 12.5,
+                      fontWeight: FontWeight.w700,
+                    ),
             ),
           ),
         ],

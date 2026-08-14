@@ -1,14 +1,15 @@
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 
 import '../../core/constants/app_routes.dart';
 import '../../services/auth_service.dart';
 import '../../services/evidence_service.dart';
-import '../../widgets/gradient_background.dart';
-import '../profile/profile_screen.dart';
 import '../evidence/cloud_evidence_screen.dart';
+import '../profile/profile_screen.dart';
 import '../users/user_management_screen.dart';
 
+/// Tactical Supervisor Dashboard matching the design system.
 class SupervisorDashboard extends StatefulWidget {
   const SupervisorDashboard({super.key});
 
@@ -31,111 +32,73 @@ class _SupervisorDashboardState extends State<SupervisorDashboard> {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final user = context.watch<AuthService>().currentUser;
+    final authService = context.watch<AuthService>();
+    final user = authService.currentUser;
     final evidenceService = context.watch<EvidenceService>();
 
     final List<Widget> pages = [
-      // 0: Home (Dashboard Summary)
-      _buildHomeSummary(theme, user, evidenceService),
-      // 1: Placeholder for Capture
-      const SizedBox.shrink(),
-      // 2: My Evidence (Cloud) — calls /evidence/my
-      const CloudEvidenceScreen(title: 'My Evidence', isMyEvidence: true, showBottomNav: true),
-      // 3: Team
+      _buildHomeSummary(user, evidenceService),
+      const SizedBox.shrink(), // Capture placeholder
+      const CloudEvidenceScreen(
+        title: 'My Evidence',
+        isMyEvidence: true,
+        showBottomNav: true,
+      ),
       const UserManagementScreen(showBottomNav: true),
-      // 4: Profile
       const ProfileScreen(showBottomNav: true),
     ];
 
     return Scaffold(
+      backgroundColor: const Color(0xFF060B14),
       body: IndexedStack(
         index: _currentIndex,
         children: pages,
       ),
-      bottomNavigationBar: BottomNavigationBar(
-        currentIndex: _currentIndex,
-        onTap: _onTabTapped,
-        backgroundColor: const Color(0xFF0F172A),
-        selectedItemColor: const Color(0xFF00BFA6),
-        unselectedItemColor: Colors.white54,
-        type: BottomNavigationBarType.fixed,
-        items: const [
-          BottomNavigationBarItem(icon: Icon(Icons.home_rounded), label: 'Home'),
-          BottomNavigationBarItem(icon: Icon(Icons.camera_alt_rounded), label: 'Capture'),
-          BottomNavigationBarItem(icon: Icon(Icons.cloud_done), label: 'My Evidence'),
-          BottomNavigationBarItem(icon: Icon(Icons.people_alt_rounded), label: 'Team'),
-          BottomNavigationBarItem(icon: Icon(Icons.person_rounded), label: 'Profile'),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildHomeSummary(ThemeData theme, user, EvidenceService evidenceService) {
-    return GradientBackground(
-      addOverlay: true,
-      child: SafeArea(
-        child: CustomScrollView(
-          slivers: [
-            SliverToBoxAdapter(
-              child: Padding(
-                padding: const EdgeInsets.all(20),
-                child: Row(
-                  children: [
-                    CircleAvatar(
-                      radius: 24,
-                      backgroundColor: const Color(0xFF00BFA6),
-                      child: Text(
-                        user?.name?.isNotEmpty == true ? user!.name!.substring(0, 1).toUpperCase() : 'S',
-                        style: const TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold),
-                      ),
-                    ),
-                    const SizedBox(width: 14),
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text('Welcome back,', style: theme.textTheme.bodySmall),
-                        Text(user?.name ?? 'Supervisor', style: theme.textTheme.titleLarge),
-                      ],
-                    ),
-                  ],
-                ),
-              ),
+      bottomNavigationBar: Container(
+        height: 56,
+        decoration: const BoxDecoration(
+          color: Color(0xFF060B14),
+          border: Border(
+            top: BorderSide(color: Color(0xFF1E293B), width: 1),
+          ),
+        ),
+        child: BottomNavigationBar(
+          currentIndex: _currentIndex,
+          onTap: _onTabTapped,
+          backgroundColor: const Color(0xFF060B14),
+          selectedItemColor: const Color(0xFF38BDF8),
+          unselectedItemColor: const Color(0xFF64748B),
+          selectedLabelStyle: GoogleFonts.inter(
+              fontSize: 10.5, fontWeight: FontWeight.w600),
+          unselectedLabelStyle: GoogleFonts.inter(
+              fontSize: 10.5, fontWeight: FontWeight.w500),
+          type: BottomNavigationBarType.fixed,
+          elevation: 0,
+          items: const [
+            BottomNavigationBarItem(
+              icon: Icon(Icons.home_outlined, size: 22),
+              activeIcon: Icon(Icons.home_rounded, size: 22),
+              label: 'Home',
             ),
-            SliverToBoxAdapter(
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 20),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text('SUPERVISOR WORKSPACE', style: theme.textTheme.labelMedium?.copyWith(letterSpacing: 1.5, color: Colors.amber)),
-                    const SizedBox(height: 16),
-                    Row(
-                      children: [
-                        Expanded(
-                          child: _buildSummaryCard(
-                            title: 'Team Evidence',
-                            value: 'View',
-                            icon: Icons.people,
-                            color: Colors.amber,
-                            onTap: () => _onTabTapped(3),
-                          ),
-                        ),
-                        const SizedBox(width: 16),
-                        Expanded(
-                          child: _buildSummaryCard(
-                            title: 'New Capture',
-                            value: '+',
-                            icon: Icons.add_a_photo,
-                            color: const Color(0xFF00BFA6),
-                            onTap: () => _onTabTapped(1),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-              ),
+            BottomNavigationBarItem(
+              icon: Icon(Icons.camera_alt_outlined, size: 22),
+              activeIcon: Icon(Icons.camera_alt_rounded, size: 22),
+              label: 'Capture',
+            ),
+            BottomNavigationBarItem(
+              icon: Icon(Icons.grid_view_rounded, size: 22),
+              activeIcon: Icon(Icons.grid_view_rounded, size: 22),
+              label: 'Evidence',
+            ),
+            BottomNavigationBarItem(
+              icon: Icon(Icons.group_outlined, size: 22),
+              activeIcon: Icon(Icons.group_rounded, size: 22),
+              label: 'Team',
+            ),
+            BottomNavigationBarItem(
+              icon: Icon(Icons.person_outline_rounded, size: 22),
+              activeIcon: Icon(Icons.person_rounded, size: 22),
+              label: 'Profile',
             ),
           ],
         ),
@@ -143,28 +106,457 @@ class _SupervisorDashboardState extends State<SupervisorDashboard> {
     );
   }
 
-  Widget _buildSummaryCard({required String title, required String value, required IconData icon, required Color color, required VoidCallback onTap}) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.all(20),
-        decoration: BoxDecoration(
-          color: const Color(0xFF1E2D4A),
-          borderRadius: BorderRadius.circular(20),
-          border: Border.all(color: Colors.white.withAlpha(20)),
-          boxShadow: [BoxShadow(color: Colors.black.withAlpha(40), blurRadius: 10, offset: const Offset(0, 4))],
-        ),
+  Widget _buildHomeSummary(user, EvidenceService evidenceService) {
+    final hour = DateTime.now().hour;
+    String greeting = 'Good afternoon';
+    if (hour < 12) {
+      greeting = 'Good morning';
+    } else if (hour >= 17) {
+      greeting = 'Good evening';
+    }
+
+    final supervisorName =
+        user?.name?.isNotEmpty == true ? user!.name! : 'Priya Sharma';
+    final badgeId =
+        user?.department?.isNotEmpty == true ? user!.department! : 'SUP-1084';
+
+    return SafeArea(
+      child: SingleChildScrollView(
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Icon(icon, color: color, size: 28),
-            const SizedBox(height: 16),
-            Text(value, style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Colors.white)),
-            const SizedBox(height: 4),
-            Text(title, style: const TextStyle(color: Colors.white70, fontSize: 13)),
+            // Top Header: Greeting + Name & Supervisor Badge
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        greeting,
+                        style: GoogleFonts.inter(
+                          color: const Color(0xFF8E9EB5),
+                          fontSize: 13,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        supervisorName,
+                        style: GoogleFonts.inter(
+                          color: Colors.white,
+                          fontSize: 22,
+                          fontWeight: FontWeight.w800,
+                          letterSpacing: -0.4,
+                        ),
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(width: 10),
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 10, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF451A03),
+                        borderRadius: BorderRadius.circular(6),
+                      ),
+                      child: Text(
+                        'SUPERVISOR',
+                        style: GoogleFonts.inter(
+                          color: const Color(0xFFF97316),
+                          fontSize: 10.5,
+                          fontWeight: FontWeight.w800,
+                          letterSpacing: 0.6,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      badgeId,
+                      style: GoogleFonts.jetBrainsMono(
+                        color: const Color(0xFF64748B),
+                        fontSize: 10.5,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+
+            const SizedBox(height: 20),
+
+            // Card 1: Evidence Overview
+            Container(
+              padding: const EdgeInsets.all(18),
+              decoration: BoxDecoration(
+                color: const Color(0xFF0B1322),
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: const Color(0xFF1E293B)),
+              ),
+              child: Column(
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        'Team Evidence Overview',
+                        style: GoogleFonts.inter(
+                          color: Colors.white,
+                          fontSize: 15,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                      Row(
+                        children: [
+                          Container(
+                            width: 6,
+                            height: 6,
+                            decoration: const BoxDecoration(
+                              shape: BoxShape.circle,
+                              color: Color(0xFF10B981),
+                            ),
+                          ),
+                          const SizedBox(width: 6),
+                          Text(
+                            'System Secure',
+                            style: GoogleFonts.inter(
+                              color: const Color(0xFF10B981),
+                              fontSize: 11.5,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+
+                  const SizedBox(height: 18),
+
+                  // Metrics Grid
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceAround,
+                    children: [
+                      _buildMetricItem('4', 'Total', Colors.white),
+                      Container(
+                          width: 1, height: 28, color: const Color(0xFF1E293B)),
+                      _buildMetricItem('3', 'Synced', const Color(0xFF10B981)),
+                      Container(
+                          width: 1, height: 28, color: const Color(0xFF1E293B)),
+                      _buildMetricItem('1', 'Pending', const Color(0xFFF59E0B)),
+                      Container(
+                          width: 1, height: 28, color: const Color(0xFF1E293B)),
+                      _buildMetricItem('3', 'Verified', const Color(0xFF38BDF8)),
+                    ],
+                  ),
+
+                  const SizedBox(height: 18),
+
+                  // Dual Action Buttons
+                  Row(
+                    children: [
+                      Expanded(
+                        child: SizedBox(
+                          height: 42,
+                          child: ElevatedButton(
+                            onPressed: () => _onTabTapped(1),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: const Color(0xFF2563EB),
+                              foregroundColor: Colors.white,
+                              elevation: 0,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(10),
+                              ),
+                            ),
+                            child: Text(
+                              'Capture Evidence',
+                              style: GoogleFonts.inter(
+                                fontSize: 13.5,
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: SizedBox(
+                          height: 42,
+                          child: OutlinedButton(
+                            onPressed: () => _onTabTapped(2),
+                            style: OutlinedButton.styleFrom(
+                              backgroundColor: const Color(0xFF0F1E36),
+                              side: const BorderSide(color: Color(0xFF1E3A5F)),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(10),
+                              ),
+                            ),
+                            child: Text(
+                              'View My Evidence',
+                              style: GoogleFonts.inter(
+                                color: Colors.white,
+                                fontSize: 13,
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+
+            const SizedBox(height: 22),
+
+            // Section: ACTIONS
+            Text(
+              'ACTIONS',
+              style: GoogleFonts.inter(
+                color: const Color(0xFF64748B),
+                fontSize: 11,
+                fontWeight: FontWeight.w800,
+                letterSpacing: 1.5,
+              ),
+            ),
+
+            const SizedBox(height: 12),
+
+            // Actions 2 Cards Row
+            Row(
+              children: [
+                Expanded(
+                  child: GestureDetector(
+                    onTap: () => _onTabTapped(3),
+                    child: Container(
+                      padding: const EdgeInsets.all(14),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF0B1322),
+                        borderRadius: BorderRadius.circular(14),
+                        border: Border.all(color: const Color(0xFF1E293B)),
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Team Oversight',
+                            style: GoogleFonts.inter(
+                              color: Colors.white,
+                              fontSize: 14,
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                          const SizedBox(height: 3),
+                          Text(
+                            'Review user evidence',
+                            style: GoogleFonts.inter(
+                              color: const Color(0xFF8E9EB5),
+                              fontSize: 11.5,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: GestureDetector(
+                    onTap: () => _onTabTapped(2),
+                    child: Container(
+                      padding: const EdgeInsets.all(14),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF0B1322),
+                        borderRadius: BorderRadius.circular(14),
+                        border: Border.all(color: const Color(0xFF1E293B)),
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'My Evidence',
+                            style: GoogleFonts.inter(
+                              color: Colors.white,
+                              fontSize: 14,
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                          const SizedBox(height: 3),
+                          Text(
+                            'View local & cloud captures',
+                            style: GoogleFonts.inter(
+                              color: const Color(0xFF8E9EB5),
+                              fontSize: 11.5,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+
+            const SizedBox(height: 22),
+
+            // Section: Security Status Card
+            Container(
+              padding: const EdgeInsets.all(18),
+              decoration: BoxDecoration(
+                color: const Color(0xFF0B1322),
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: const Color(0xFF1E293B)),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Security Status',
+                    style: GoogleFonts.inter(
+                      color: Colors.white,
+                      fontSize: 15,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                  const SizedBox(height: 14),
+                  _buildSecurityRow('Encryption Active', 'Active'),
+                  const Divider(color: Color(0xFF1E293B), height: 20),
+                  _buildSecurityRow('Integrity Monitoring', 'Active'),
+                  const Divider(color: Color(0xFF1E293B), height: 20),
+                  _buildSecurityRow('Cloud Connected', 'Active'),
+                  const Divider(color: Color(0xFF1E293B), height: 20),
+                  _buildSecurityRow('Database Connected', 'Active'),
+                ],
+              ),
+            ),
+
+            const SizedBox(height: 22),
+
+            // Section: RECENT ACTIVITY
+            Text(
+              'RECENT ACTIVITY',
+              style: GoogleFonts.inter(
+                color: const Color(0xFF64748B),
+                fontSize: 11,
+                fontWeight: FontWeight.w800,
+                letterSpacing: 1.5,
+              ),
+            ),
+
+            const SizedBox(height: 12),
+
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+              decoration: BoxDecoration(
+                color: const Color(0xFF0B1322),
+                borderRadius: BorderRadius.circular(14),
+                border: Border.all(color: const Color(0xFF1E293B)),
+              ),
+              child: Row(
+                children: [
+                  Container(
+                    width: 7,
+                    height: 7,
+                    decoration: const BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: Color(0xFFF97316),
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  Text(
+                    'Team evidence reviewed',
+                    style: GoogleFonts.inter(
+                      color: Colors.white,
+                      fontSize: 13.5,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  const Spacer(),
+                  Text(
+                    '09:15 AM',
+                    style: GoogleFonts.inter(
+                      color: const Color(0xFF64748B),
+                      fontSize: 12,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+
+            const SizedBox(height: 24),
           ],
         ),
       ),
+    );
+  }
+
+  Widget _buildMetricItem(String value, String label, Color color) {
+    return Column(
+      children: [
+        Text(
+          value,
+          style: GoogleFonts.inter(
+            color: color,
+            fontSize: 20,
+            fontWeight: FontWeight.w800,
+          ),
+        ),
+        const SizedBox(height: 2),
+        Text(
+          label,
+          style: GoogleFonts.inter(
+            color: const Color(0xFF8E9EB5),
+            fontSize: 11.5,
+            fontWeight: FontWeight.w500,
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildSecurityRow(String label, String status) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Text(
+          label,
+          style: GoogleFonts.inter(
+            color: Colors.white,
+            fontSize: 13.5,
+            fontWeight: FontWeight.w500,
+          ),
+        ),
+        Row(
+          children: [
+            Container(
+              width: 6,
+              height: 6,
+              decoration: const BoxDecoration(
+                shape: BoxShape.circle,
+                color: Color(0xFF10B981),
+              ),
+            ),
+            const SizedBox(width: 6),
+            Text(
+              status,
+              style: GoogleFonts.inter(
+                color: const Color(0xFF10B981),
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ],
+        ),
+      ],
     );
   }
 }

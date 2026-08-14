@@ -1,15 +1,13 @@
 import 'package:camera/camera.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 import '../../core/constants/app_routes.dart';
 import '../../services/camera_service.dart';
 import '../../services/location_service.dart';
 
-/// Full-screen camera for evidence capture.
-///
-/// Security: NO gallery picker is shown. Only the live camera feed
-/// and a capture button are available.
+/// Full-screen tactical camera for evidence capture matching mockup.
 class SecureCameraScreen extends StatefulWidget {
   const SecureCameraScreen({super.key});
 
@@ -22,6 +20,7 @@ class _SecureCameraScreenState extends State<SecureCameraScreen>
   final CameraService _cameraService = CameraService();
   final LocationService _locationService = LocationService();
   bool _isCapturing = false;
+  bool _hasGpsFix = false;
   String? _error;
 
   @override
@@ -30,7 +29,13 @@ class _SecureCameraScreenState extends State<SecureCameraScreen>
     WidgetsBinding.instance.addObserver(this);
     _initCamera();
     if (!kIsWeb) {
-      _locationService.getCurrentPosition().then((_) {}, onError: (_) {});
+      _locationService.getCurrentPosition().then((pos) {
+        if (mounted) {
+          setState(() {
+            _hasGpsFix = pos != null;
+          });
+        }
+      }, onError: (_) {});
     }
   }
 
@@ -43,7 +48,6 @@ class _SecureCameraScreenState extends State<SecureCameraScreen>
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
-    // Handle camera lifecycle
     if (state == AppLifecycleState.inactive) {
       _cameraService.dispose();
     } else if (state == AppLifecycleState.resumed) {
@@ -72,7 +76,6 @@ class _SecureCameraScreenState extends State<SecureCameraScreen>
 
       if (!mounted) return;
 
-      // Navigate to confirmation screen with captured image path
       Navigator.of(context).pushReplacementNamed(
         AppRoutes.captureConfirmation,
         arguments: imagePath,
@@ -82,7 +85,7 @@ class _SecureCameraScreenState extends State<SecureCameraScreen>
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Capture failed: $e'),
-            backgroundColor: Theme.of(context).colorScheme.error,
+            backgroundColor: const Color(0xFFEF4444),
           ),
         );
       }
@@ -93,227 +96,138 @@ class _SecureCameraScreenState extends State<SecureCameraScreen>
 
   @override
   Widget build(BuildContext context) {
-    // Web platform guard — camera plugin is not supported on Flutter Web
-    if (kIsWeb) {
-      return Scaffold(
-        backgroundColor: Colors.black,
-        appBar: AppBar(
-          backgroundColor: Colors.transparent,
-          iconTheme: const IconThemeData(color: Colors.white),
-        ),
-        body: Center(
-          child: Padding(
-            padding: const EdgeInsets.all(32),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                const Icon(Icons.camera_alt_rounded, size: 64, color: Color(0xFF00BFA6)),
-                const SizedBox(height: 24),
-                const Text(
-                  'Secure Evidence Camera',
-                  style: TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold),
-                ),
-                const SizedBox(height: 16),
-                const Text(
-                  'The secure evidence camera is available on the Android application.\n\nPlease use the Android app for official evidence capture.',
-                  textAlign: TextAlign.center,
-                  style: TextStyle(color: Colors.white70, fontSize: 15),
-                ),
-                const SizedBox(height: 32),
-                ElevatedButton.icon(
-                  onPressed: () => Navigator.pop(context),
-                  icon: const Icon(Icons.arrow_back),
-                  label: const Text('Go Back'),
-                ),
-              ],
-            ),
-          ),
-        ),
-      );
-    }
-
-    if (_error != null) {
-      return Scaffold(
-        backgroundColor: Colors.black,
-        appBar: AppBar(
-          backgroundColor: Colors.transparent,
-          iconTheme: const IconThemeData(color: Colors.white),
-        ),
-        body: Center(
-          child: Padding(
-            padding: const EdgeInsets.all(32),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                const Icon(Icons.camera_alt_rounded,
-                    size: 64, color: Colors.white54),
-                const SizedBox(height: 16),
-                Text(
-                  _error!,
-                  textAlign: TextAlign.center,
-                  style: const TextStyle(color: Colors.white70),
-                ),
-                const SizedBox(height: 24),
-                ElevatedButton(
-                  onPressed: () {
-                    setState(() => _error = null);
-                    _initCamera();
-                  },
-                  child: const Text('Retry'),
-                ),
-              ],
-            ),
-          ),
-        ),
-      );
-    }
-
-    if (!_cameraService.isInitialized) {
-      return const Scaffold(
-        backgroundColor: Colors.black,
-        body: Center(
-          child: CircularProgressIndicator(color: Color(0xFF00BFA6)),
-        ),
-      );
-    }
-
     return Scaffold(
       backgroundColor: Colors.black,
       body: Stack(
+        fit: StackFit.expand,
         children: [
-          // Camera preview
-          Positioned.fill(
-            child: Center(
-              child: AspectRatio(
-                aspectRatio: 1 / _cameraService.controller!.value.aspectRatio,
-                child: CameraPreview(_cameraService.controller!),
-              ),
-            ),
-          ),
+          // 1. Camera Viewfinder / Preview
+          _buildCameraPreview(),
 
-          // Top bar with close and flash
-          Positioned(
-            top: 0,
-            left: 0,
-            right: 0,
-            child: SafeArea(
+          // 2. Tactical Reticle & Crosshair Overlay
+          _buildTacticalOverlay(),
+
+          // 3. Top Navigation & Status Bar
+          SafeArea(
+            child: Align(
+              alignment: Alignment.topCenter,
               child: Padding(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    // Close button
-                    _CircleButton(
-                      icon: Icons.close_rounded,
+                    // Back Button
+                    GestureDetector(
                       onTap: () => Navigator.pop(context),
-                    ),
-                    // Security indicator
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 12, vertical: 6),
-                      decoration: BoxDecoration(
-                        color: Colors.black45,
-                        borderRadius: BorderRadius.circular(20),
+                      child: Container(
+                        width: 42,
+                        height: 42,
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF0B1322).withAlpha(220),
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(color: const Color(0xFF1E293B)),
+                        ),
+                        child: const Icon(
+                          Icons.chevron_left_rounded,
+                          color: Colors.white,
+                          size: 26,
+                        ),
                       ),
-                      child: const Row(
+                    ),
+
+                    // Top GPS Status Pill
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
+                      decoration: BoxDecoration(
+                        color: _hasGpsFix
+                            ? const Color(0xFF052E16).withAlpha(220)
+                            : const Color(0xFF451A03).withAlpha(220),
+                        borderRadius: BorderRadius.circular(20),
+                        border: Border.all(
+                          color: _hasGpsFix ? const Color(0xFF10B981) : const Color(0xFFF59E0B),
+                        ),
+                      ),
+                      child: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          Icon(Icons.verified_user_rounded,
-                              color: Color(0xFF00BFA6), size: 14),
-                          SizedBox(width: 6),
+                          Container(
+                            width: 6,
+                            height: 6,
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              color: _hasGpsFix ? const Color(0xFF10B981) : const Color(0xFFF59E0B),
+                            ),
+                          ),
+                          const SizedBox(width: 8),
                           Text(
-                            'SECURE CAPTURE',
-                            style: TextStyle(
-                              color: Color(0xFF00BFA6),
+                            _hasGpsFix ? 'GPS LOCKED (±12m)' : 'ACQUIRING GPS',
+                            style: GoogleFonts.inter(
+                              color: _hasGpsFix ? const Color(0xFF10B981) : const Color(0xFFF59E0B),
                               fontSize: 11,
-                              fontWeight: FontWeight.w600,
-                              letterSpacing: 1,
+                              fontWeight: FontWeight.w800,
+                              letterSpacing: 0.8,
                             ),
                           ),
                         ],
                       ),
                     ),
-                    // Flash toggle
-                    _CircleButton(
-                      icon: _flashIcon,
-                      onTap: () async {
-                        await _cameraService.toggleFlash();
-                        if (mounted) setState(() {});
-                      },
-                    ),
+
+                    const SizedBox(width: 42), // Spacer to balance back button
                   ],
                 ),
               ),
             ),
           ),
 
-          // Bottom capture controls
-          Positioned(
-            bottom: 0,
-            left: 0,
-            right: 0,
-            child: SafeArea(
-              child: Container(
-                padding: const EdgeInsets.symmetric(vertical: 24),
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    begin: Alignment.topCenter,
-                    end: Alignment.bottomCenter,
-                    colors: [
-                      Colors.transparent,
-                      Colors.black.withAlpha(180),
-                    ],
-                  ),
-                ),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+          // 4. Bottom Controls & Capture Shutter
+          SafeArea(
+            child: Align(
+              alignment: Alignment.bottomCenter,
+              child: Padding(
+                padding: const EdgeInsets.only(bottom: 24),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
                   children: [
-                    // Spacer / placeholder
-                    const SizedBox(width: 56),
-
-                    // Capture button
-                    GestureDetector(
-                      onTap: _isCapturing ? null : _captureImage,
-                      child: AnimatedContainer(
-                        duration: const Duration(milliseconds: 150),
-                        width: 72,
-                        height: 72,
-                        decoration: BoxDecoration(
-                          shape: BoxShape.circle,
-                          border: Border.all(
-                            color: Colors.white,
-                            width: 4,
-                          ),
-                        ),
-                        child: Container(
-                          margin: const EdgeInsets.all(4),
-                          decoration: BoxDecoration(
-                            shape: BoxShape.circle,
-                            color: _isCapturing
-                                ? Colors.grey
-                                : Colors.white,
-                          ),
-                          child: _isCapturing
-                              ? const Padding(
-                                  padding: EdgeInsets.all(16),
-                                  child: CircularProgressIndicator(
-                                    strokeWidth: 2,
-                                    color: Colors.black54,
-                                  ),
-                                )
-                              : null,
-                        ),
+                    // Status text
+                    Text(
+                      _hasGpsFix ? 'Ready to capture evidence' : 'Acquiring GPS signal...',
+                      style: GoogleFonts.inter(
+                        color: const Color(0xFF38BDF8),
+                        fontSize: 13,
+                        fontWeight: FontWeight.w500,
                       ),
                     ),
 
-                    // Camera switch
-                    _CircleButton(
-                      icon: Icons.flip_camera_android_rounded,
-                      onTap: () async {
-                        await _cameraService.switchCamera();
-                        if (mounted) setState(() {});
-                      },
+                    const SizedBox(height: 18),
+
+                    // Concentric Circular Shutter Button
+                    GestureDetector(
+                      onTap: _captureImage,
+                      child: Container(
+                        width: 76,
+                        height: 76,
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          color: const Color(0xFF1E293B),
+                          border: Border.all(color: Colors.white, width: 4),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withAlpha(120),
+                              blurRadius: 10,
+                            ),
+                          ],
+                        ),
+                        child: Center(
+                          child: Container(
+                            width: 58,
+                            height: 58,
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              color: _isCapturing ? const Color(0xFF38BDF8) : const Color(0xFF475569),
+                            ),
+                          ),
+                        ),
+                      ),
                     ),
                   ],
                 ),
@@ -325,41 +239,115 @@ class _SecureCameraScreenState extends State<SecureCameraScreen>
     );
   }
 
-  IconData get _flashIcon {
-    final mode = _cameraService.controller?.value.flashMode ?? FlashMode.off;
-    switch (mode) {
-      case FlashMode.off:
-        return Icons.flash_off_rounded;
-      case FlashMode.auto:
-        return Icons.flash_auto_rounded;
-      case FlashMode.always:
-        return Icons.flash_on_rounded;
-      case FlashMode.torch:
-        return Icons.flashlight_on_rounded;
-    }
-  }
-}
-
-// ── Circle button ─────────────────────────────────────────────────────────
-
-class _CircleButton extends StatelessWidget {
-  final IconData icon;
-  final VoidCallback onTap;
-
-  const _CircleButton({required this.icon, required this.onTap});
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        width: 44,
-        height: 44,
-        decoration: BoxDecoration(
-          shape: BoxShape.circle,
-          color: Colors.black.withAlpha(100),
+  Widget _buildCameraPreview() {
+    if (_error != null || !_cameraService.isInitialized) {
+      return Container(
+        color: const Color(0xFF060B14),
+        child: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const CircularProgressIndicator(color: Color(0xFF2563EB)),
+              const SizedBox(height: 16),
+              Text(
+                'Initializing Secure Camera...',
+                style: GoogleFonts.inter(color: const Color(0xFF8E9EB5), fontSize: 14),
+              ),
+            ],
+          ),
         ),
-        child: Icon(icon, color: Colors.white, size: 22),
+      );
+    }
+
+    final controller = _cameraService.controller;
+    if (controller == null || !controller.value.isInitialized) {
+      return Container(color: Colors.black);
+    }
+
+    return CameraPreview(controller);
+  }
+
+  Widget _buildTacticalOverlay() {
+    return IgnorePointer(
+      child: Center(
+        child: Container(
+          width: 260,
+          height: 260,
+          decoration: BoxDecoration(
+            border: Border.all(color: Colors.white.withAlpha(60), width: 1.5),
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: Stack(
+            children: [
+              // Center Crosshair
+              const Center(
+                child: Icon(
+                  Icons.add,
+                  color: Colors.white38,
+                  size: 28,
+                ),
+              ),
+
+              // Corner Accents
+              Positioned(
+                top: 0,
+                left: 0,
+                child: Container(
+                  width: 20,
+                  height: 20,
+                  decoration: const BoxDecoration(
+                    border: Border(
+                      top: BorderSide(color: Colors.white, width: 3),
+                      left: BorderSide(color: Colors.white, width: 3),
+                    ),
+                  ),
+                ),
+              ),
+              Positioned(
+                top: 0,
+                right: 0,
+                child: Container(
+                  width: 20,
+                  height: 20,
+                  decoration: const BoxDecoration(
+                    border: Border(
+                      top: BorderSide(color: Colors.white, width: 3),
+                      right: BorderSide(color: Colors.white, width: 3),
+                    ),
+                  ),
+                ),
+              ),
+              Positioned(
+                bottom: 0,
+                left: 0,
+                child: Container(
+                  width: 20,
+                  height: 20,
+                  decoration: const BoxDecoration(
+                    border: Border(
+                      bottom: BorderSide(color: Colors.white, width: 3),
+                      left: BorderSide(color: Colors.white, width: 3),
+                    ),
+                  ),
+                ),
+              ),
+              Positioned(
+                bottom: 0,
+                right: 0,
+                child: Container(
+                  width: 20,
+                  height: 20,
+                  decoration: const BoxDecoration(
+                    border: Border(
+                      bottom: BorderSide(color: Colors.white, width: 3),
+                      right: BorderSide(color: Colors.white, width: 3),
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }

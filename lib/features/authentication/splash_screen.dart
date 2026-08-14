@@ -1,15 +1,12 @@
 import 'dart:async';
-
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 
 import '../../core/constants/app_routes.dart';
 import '../../services/auth_service.dart';
-import '../../widgets/gradient_background.dart';
 
-/// Animated splash screen with security motif.
-///
-/// Auto-navigates to dashboard (if session exists) or login after a delay.
+/// Pixel-perfect animated Splash Screen matching the tactical GeoEvidence UI.
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
 
@@ -20,9 +17,15 @@ class SplashScreen extends StatefulWidget {
 class _SplashScreenState extends State<SplashScreen>
     with SingleTickerProviderStateMixin {
   late AnimationController _animController;
-  late Animation<double> _fadeAnim;
-  late Animation<double> _scaleAnim;
-  late Animation<double> _slideAnim;
+  late Animation<double> _pulseAnim;
+
+  int _statusIndex = 0;
+  final List<String> _statusTexts = [
+    'Initializing secure environment',
+    'Verifying cryptographic keystore',
+    'Establishing encrypted channel',
+  ];
+  Timer? _statusTimer;
 
   @override
   void initState() {
@@ -30,36 +33,29 @@ class _SplashScreenState extends State<SplashScreen>
 
     _animController = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 1500),
-    );
+      duration: const Duration(milliseconds: 1400),
+    )..repeat(reverse: true);
 
-    _fadeAnim = Tween<double>(begin: 0.0, end: 1.0).animate(
+    _pulseAnim = Tween<double>(begin: 0.4, end: 1.0).animate(
       CurvedAnimation(
         parent: _animController,
-        curve: const Interval(0.0, 0.6, curve: Curves.easeOut),
+        curve: Curves.easeInOut,
       ),
     );
 
-    _scaleAnim = Tween<double>(begin: 0.5, end: 1.0).animate(
-      CurvedAnimation(
-        parent: _animController,
-        curve: const Interval(0.0, 0.6, curve: Curves.elasticOut),
-      ),
-    );
+    _statusTimer = Timer.periodic(const Duration(milliseconds: 900), (timer) {
+      if (mounted && _statusIndex < _statusTexts.length - 1) {
+        setState(() {
+          _statusIndex++;
+        });
+      }
+    });
 
-    _slideAnim = Tween<double>(begin: 30.0, end: 0.0).animate(
-      CurvedAnimation(
-        parent: _animController,
-        curve: const Interval(0.3, 0.8, curve: Curves.easeOut),
-      ),
-    );
-
-    _animController.forward();
     _navigateAfterDelay();
   }
 
   Future<void> _navigateAfterDelay() async {
-    await Future.delayed(const Duration(seconds: 3));
+    await Future.delayed(const Duration(milliseconds: 2800));
     if (!mounted) return;
 
     final authService = context.read<AuthService>();
@@ -73,6 +69,7 @@ class _SplashScreenState extends State<SplashScreen>
 
   @override
   void dispose() {
+    _statusTimer?.cancel();
     _animController.dispose();
     super.dispose();
   }
@@ -80,108 +77,128 @@ class _SplashScreenState extends State<SplashScreen>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: GradientBackground(
-        addOverlay: true,
-        child: Center(
-          child: AnimatedBuilder(
-            animation: _animController,
-            builder: (context, child) {
-              return Column(
+      backgroundColor: const Color(0xFF060B14),
+      body: SafeArea(
+        child: Stack(
+          children: [
+            // Center content
+            Center(
+              child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  // Shield icon
-                  Transform.scale(
-                    scale: _scaleAnim.value,
-                    child: Opacity(
-                      opacity: _fadeAnim.value,
-                      child: Container(
-                        width: 100,
-                        height: 100,
+                  // App Title
+                  Text(
+                    'GeoEvidence',
+                    style: GoogleFonts.inter(
+                      fontSize: 34,
+                      fontWeight: FontWeight.w800,
+                      color: Colors.white,
+                      letterSpacing: -0.6,
+                    ),
+                  ),
+
+                  const SizedBox(height: 10),
+
+                  // Subtitle
+                  Text(
+                    'SECURE FIELD EVIDENCE PLATFORM',
+                    style: GoogleFonts.inter(
+                      fontSize: 11.5,
+                      fontWeight: FontWeight.w700,
+                      color: const Color(0xFF38BDF8),
+                      letterSpacing: 2.0,
+                    ),
+                  ),
+
+                  const SizedBox(height: 38),
+
+                  // Horizontal loading bar
+                  AnimatedBuilder(
+                    animation: _animController,
+                    builder: (context, child) {
+                      return Container(
+                        width: 48,
+                        height: 3,
                         decoration: BoxDecoration(
-                          gradient: const LinearGradient(
-                            begin: Alignment.topLeft,
-                            end: Alignment.bottomRight,
-                            colors: [
-                              Color(0xFF00BFA6),
-                              Color(0xFF00897B),
-                            ],
-                          ),
-                          borderRadius: BorderRadius.circular(28),
+                          color: const Color(0xFF2563EB),
+                          borderRadius: BorderRadius.circular(2),
                           boxShadow: [
                             BoxShadow(
-                              color: const Color(0xFF00BFA6).withAlpha(60),
-                              blurRadius: 30,
-                              spreadRadius: 5,
+                              color: const Color(0xFF2563EB)
+                                  .withOpacity(0.5 + (_pulseAnim.value * 0.4)),
+                              blurRadius: 10,
+                              spreadRadius: 1,
                             ),
                           ],
                         ),
-                        child: ClipRRect(
-                          borderRadius: BorderRadius.circular(28),
-                          child: Image.asset(
-                            'assets/logo.png',
-                            width: 100,
-                            height: 100,
-                            fit: BoxFit.cover,
+                      );
+                    },
+                  ),
+
+                  const SizedBox(height: 22),
+
+                  // Status text with glowing pulsing dot
+                  AnimatedSwitcher(
+                    duration: const Duration(milliseconds: 300),
+                    child: Row(
+                      key: ValueKey<int>(_statusIndex),
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        AnimatedBuilder(
+                          animation: _pulseAnim,
+                          builder: (context, child) {
+                            return Container(
+                              width: 6,
+                              height: 6,
+                              decoration: BoxDecoration(
+                                shape: BoxShape.circle,
+                                color: const Color(0xFF38BDF8)
+                                    .withOpacity(_pulseAnim.value),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: const Color(0xFF38BDF8)
+                                        .withOpacity(_pulseAnim.value * 0.8),
+                                    blurRadius: 6,
+                                  ),
+                                ],
+                              ),
+                            );
+                          },
+                        ),
+                        const SizedBox(width: 8),
+                        Text(
+                          _statusTexts[_statusIndex],
+                          style: GoogleFonts.inter(
+                            color: const Color(0xFF64748B),
+                            fontSize: 13,
+                            fontWeight: FontWeight.w500,
                           ),
                         ),
-                      ),
-                    ),
-                  ),
-
-                  const SizedBox(height: 28),
-
-                  // App name
-                  Transform.translate(
-                    offset: Offset(0, _slideAnim.value),
-                    child: Opacity(
-                      opacity: _fadeAnim.value,
-                      child: Text(
-                        'GeoEvidence',
-                        style:
-                            Theme.of(context).textTheme.displayLarge?.copyWith(
-                                  fontWeight: FontWeight.w700,
-                                  letterSpacing: -1,
-                                ),
-                      ),
-                    ),
-                  ),
-
-                  const SizedBox(height: 8),
-
-                  // Tagline
-                  Transform.translate(
-                    offset: Offset(0, _slideAnim.value),
-                    child: Opacity(
-                      opacity: _fadeAnim.value,
-                      child: Text(
-                        'Secure Field Evidence Capture',
-                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                              color: const Color(0xFF00BFA6),
-                              letterSpacing: 1.5,
-                              fontWeight: FontWeight.w500,
-                            ),
-                      ),
-                    ),
-                  ),
-
-                  const SizedBox(height: 60),
-
-                  // Loading indicator
-                  Opacity(
-                    opacity: _fadeAnim.value,
-                    child: SizedBox(
-                      width: 24,
-                      height: 24,
-                      child: CircularProgressIndicator(
-                        strokeWidth: 2,
-                        color: const Color(0xFF00BFA6).withAlpha(150),
-                      ),
+                      ],
                     ),
                   ),
                 ],
-              );
-            },
-          ),
+              ),
+            ),
+
+            // Bottom security spec footer
+            Positioned(
+              bottom: 24,
+              left: 0,
+              right: 0,
+              child: Center(
+                child: Text(
+                  'v2.4.1  ·  AES-256-GCM',
+                  style: GoogleFonts.jetBrainsMono(
+                    color: const Color(0xFF334155),
+                    fontSize: 11,
+                    fontWeight: FontWeight.w600,
+                    letterSpacing: 1.5,
+                  ),
+                ),
+              ),
+            ),
+          ],
         ),
       ),
     );
