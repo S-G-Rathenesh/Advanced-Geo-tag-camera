@@ -1,4 +1,3 @@
-import 'package:flutter/foundation.dart';
 
 /// App-wide constants for the Geo Evidence application.
 ///
@@ -13,12 +12,8 @@ class AppConstants {
   static const String appTagline = 'Secure Field Evidence Capture';
 
   // 🌐 API Configuration 🌐🌐🌐🌐🌐🌐🌐🌐🌐🌐🌐🌐🌐🌐🌐🌐🌐🌐🌐🌐🌐🌐🌐🌐🌐🌐🌐🌐🌐🌐🌐🌐🌐🌐🌐🌐🌐🌐🌐🌐🌐🌐🌐🌐🌐🌐
-  /// Hosted FastAPI backend on Render or localhost for debug.
+  /// Hosted FastAPI backend on Render.
   static String get apiBaseUrl {
-    if (kDebugMode) {
-      // We use localhost for debug mode, but since web requires IP or localhost we just use localhost.
-      return 'http://127.0.0.1:8000/api/v1';
-    }
     return 'https://advanced-geo-tag-camera.onrender.com/api/v1';
   }
   static const Duration apiTimeout = Duration(seconds: 30);
