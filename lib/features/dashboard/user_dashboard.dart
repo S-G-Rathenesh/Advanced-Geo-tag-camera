@@ -55,7 +55,6 @@ class _UserDashboardState extends State<UserDashboard> {
         children: pages,
       ),
       bottomNavigationBar: Container(
-        height: 56,
         decoration: const BoxDecoration(
           color: Color(0xFF060B14),
           border: Border(
