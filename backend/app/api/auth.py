@@ -24,14 +24,14 @@ def officer_login(request: LoginRequest, db: Session = Depends(get_db)):
     
     if not user or not user.password_hash or not verify_password(request.password, user.password_hash):
         if user:
-            log_audit_event(db, user_id=user.id, action="OFFICER_LOGIN_FAILURE", details="Invalid password")
+            log_audit_event(db, user_id=user.id, action="PASSWORD_LOGIN_FAILURE", details="Invalid password")
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Incorrect username or password",
         )
     
-    if not user.is_active or user.role.name != "OFFICER":
-        log_audit_event(db, user_id=user.id, action="OFFICER_LOGIN_FAILURE", details="Inactive account or not an officer")
+    if not user.is_active:
+        log_audit_event(db, user_id=user.id, action="PASSWORD_LOGIN_FAILURE", details="Inactive account")
         raise HTTPException(status_code=403, detail="Unauthorized access")
 
     access_token = create_access_token(subject=user.id)
@@ -39,7 +39,7 @@ def officer_login(request: LoginRequest, db: Session = Depends(get_db)):
     user.last_login_at = datetime.now(timezone.utc)
     db.commit()
 
-    log_audit_event(db, user_id=user.id, action="OFFICER_LOGIN_SUCCESS")
+    log_audit_event(db, user_id=user.id, action="PASSWORD_LOGIN_SUCCESS")
     
     return {
         "access_token": access_token,

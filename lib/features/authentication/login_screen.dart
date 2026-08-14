@@ -163,7 +163,7 @@ class _LoginScreenState extends State<LoginScreen>
                             });
                           },
                           child: Text(
-                            _showOfficerLogin ? 'Hide Officer Login' : 'Officer Login',
+                            _showOfficerLogin ? 'Hide Credential Login' : 'Credential Login',
                             style: const TextStyle(color: Colors.white70),
                           ),
                         ),
@@ -210,7 +210,7 @@ class _LoginScreenState extends State<LoginScreen>
                                   height: 56,
                                   child: FilledButton(
                                     onPressed: _handleOfficerLogin,
-                                    child: const Text('Sign In as Officer'),
+                                    child: const Text('Sign In with Credentials'),
                                   ),
                                 ),
                               ],
@@ -231,6 +231,18 @@ class _LoginScreenState extends State<LoginScreen>
                             ActionChip(
                               label: const Text('Demo Officer'),
                               onPressed: _autofillDemoOfficer,
+                              backgroundColor: Colors.white10,
+                              labelStyle: const TextStyle(color: Colors.white),
+                            ),
+                            ActionChip(
+                              label: const Text('Demo Supervisor'),
+                              onPressed: _autofillDemoSupervisor,
+                              backgroundColor: Colors.white10,
+                              labelStyle: const TextStyle(color: Colors.white),
+                            ),
+                            ActionChip(
+                              label: const Text('Demo User'),
+                              onPressed: _autofillDemoUser,
                               backgroundColor: Colors.white10,
                               labelStyle: const TextStyle(color: Colors.white),
                             ),
