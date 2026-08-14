@@ -67,9 +67,15 @@ class AuthService extends ChangeNotifier {
     }
   }
 
-  final GoogleSignIn _googleSignIn = GoogleSignIn(
-    serverClientId: '623719964431-cu0so7n08k2vaea5m2uds8rflq552m0t.apps.googleusercontent.com',
-  );
+  final GoogleSignIn _googleSignIn = kIsWeb
+      ? GoogleSignIn(
+          clientId: '623719964431-cu0so7n08k2vaea5m2uds8rflq552m0t.apps.googleusercontent.com',
+          scopes: ['email', 'profile'],
+        )
+      : GoogleSignIn(
+          serverClientId: '623719964431-cu0so7n08k2vaea5m2uds8rflq552m0t.apps.googleusercontent.com',
+          scopes: ['email', 'profile'],
+        );
 
   /// Real Google-style login using native Google Sign In.
   Future<LoginResponse> googleLogin() async {
