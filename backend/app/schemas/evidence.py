@@ -10,6 +10,7 @@ class EvidenceUploadRequest(BaseModel):
     longitude: float
     altitude: float | None = None
     gps_accuracy: float
+    address: str | None = None
     capture_timestamp: datetime
 
 class EvidenceResponse(BaseModel):
@@ -23,6 +24,7 @@ class EvidenceResponse(BaseModel):
     longitude: float
     altitude: float | None
     gps_accuracy: float
+    address: str | None
     capture_timestamp: datetime
     upload_timestamp: datetime
     status: str

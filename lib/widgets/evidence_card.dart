@@ -10,12 +10,16 @@ import 'status_badge.dart';
 /// Evidence list item card with thumbnail, metadata, and status badge.
 class EvidenceCard extends StatelessWidget {
   final EvidenceRecord record;
+  final String? userName;
   final VoidCallback? onTap;
+  final VoidCallback? onUserTap;
 
   const EvidenceCard({
     super.key,
     required this.record,
+    this.userName,
     this.onTap,
+    this.onUserTap,
   });
 
   @override
@@ -56,6 +60,27 @@ class EvidenceCard extends StatelessWidget {
                         StatusBadge(status: record.syncStatus),
                       ],
                     ),
+                    if (userName != null) ...[
+                      const SizedBox(height: 6),
+                      InkWell(
+                        onTap: onUserTap,
+                        child: Row(
+                          children: [
+                            Icon(Icons.person, size: 14, color: theme.colorScheme.primary),
+                            const SizedBox(width: 4),
+                            Expanded(
+                              child: Text(
+                                userName!,
+                                style: theme.textTheme.bodyMedium?.copyWith(
+                                  color: theme.colorScheme.primary,
+                                ),
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
                     const SizedBox(height: 6),
                     Row(
                       children: [

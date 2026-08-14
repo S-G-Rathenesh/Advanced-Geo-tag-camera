@@ -5,7 +5,9 @@ import time
 from datetime import datetime
 import hashlib
 
-base_url = "http://127.0.0.1:8000"
+import os
+
+base_url = os.getenv("API_BASE_URL", "https://advanced-geo-tag-camera.onrender.com")
 
 def mock_google_token(email, sub, name):
     header = base64.urlsafe_b64encode(json.dumps({"alg": "HS256", "typ": "JWT"}).encode()).decode()

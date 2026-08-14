@@ -7,8 +7,7 @@ import '../security/secure_storage_service.dart';
 
 /// HTTP client wrapper with auth-header injection and HTTPS enforcement.
 ///
-/// In this prototype the client is used with mock responses. When the
-/// FastAPI backend is ready, only [baseUrl] needs to change.
+/// Communicates directly with the hosted FastAPI backend configured in [AppConstants.apiBaseUrl].
 class ApiClient {
   final String baseUrl;
   final SecureStorageService _secureStorage;

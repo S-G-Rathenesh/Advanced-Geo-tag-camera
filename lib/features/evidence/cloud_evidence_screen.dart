@@ -31,6 +31,7 @@ class CloudEvidenceScreen extends StatefulWidget {
 
 class _CloudEvidenceScreenState extends State<CloudEvidenceScreen> {
   List<EvidenceRecord> _evidenceList = [];
+  Map<String, String> _userNames = {};
   bool _isLoading = true;
   String? _error;
 
@@ -58,20 +59,36 @@ class _CloudEvidenceScreenState extends State<CloudEvidenceScreen> {
     try {
       final apiService = context.read<ApiService>();
       List<EvidenceRecord> list;
+      Map<String, String> userNames = {};
       
       if (widget.isMyEvidence) {
         // Fetch current user's own evidence via /evidence/my
         list = await apiService.getMyEvidence();
+        userNames[currentUser!.userId] = currentUser.name ?? currentUser.email ?? 'Unknown User';
       } else if (widget.userId != null) {
         // Fetch a specific user's evidence via /users/{id}/evidence
         list = await apiService.getUserEvidence(widget.userId!);
+        // We'll also fetch all users to map this user's name
+        if (currentUser?.role != UserRole.user) {
+          final users = await apiService.getUsers();
+          for (var u in users) {
+            userNames[u.userId] = u.name ?? u.email ?? 'Unknown User';
+          }
+        }
       } else {
         // Fetch all evidence via /evidence (Officer/Supervisor)
         list = await apiService.getAllEvidence();
+        if (currentUser?.role != UserRole.user) {
+          final users = await apiService.getUsers();
+          for (var u in users) {
+            userNames[u.userId] = u.name ?? u.email ?? 'Unknown User';
+          }
+        }
       }
 
       setState(() {
         _evidenceList = list;
+        _userNames = userNames;
         _isLoading = false;
       });
     } catch (e) {
@@ -151,8 +168,22 @@ class _CloudEvidenceScreenState extends State<CloudEvidenceScreen> {
                       itemCount: _evidenceList.length,
                       itemBuilder: (context, index) {
                         final record = _evidenceList[index];
+                        final userName = _userNames[record.userId];
                         return EvidenceCard(
                           record: record,
+                          userName: userName,
+                          onUserTap: () {
+                            if (widget.userId == record.userId) return; // Already filtering by this user
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (_) => CloudEvidenceScreen(
+                                  title: "${userName ?? 'User'}'s Evidence",
+                                  userId: record.userId,
+                                ),
+                              ),
+                            );
+                          },
                           onTap: () {
                             Navigator.pushNamed(
                               context,

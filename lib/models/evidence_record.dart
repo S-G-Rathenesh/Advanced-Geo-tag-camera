@@ -15,6 +15,7 @@ class EvidenceRecord {
   final double longitude;
   final double? altitude;
   final double accuracy;
+  final String? address;
   final DateTime timestamp;
   final String sha256Hash;
   final SyncStatus syncStatus;
@@ -33,6 +34,7 @@ class EvidenceRecord {
     required this.longitude,
     this.altitude,
     required this.accuracy,
+    this.address,
     required this.timestamp,
     required this.sha256Hash,
     this.syncStatus = SyncStatus.pending,
@@ -53,6 +55,7 @@ class EvidenceRecord {
     double? longitude,
     double? altitude,
     double? accuracy,
+    String? address,
     DateTime? timestamp,
     String? sha256Hash,
     SyncStatus? syncStatus,
@@ -71,6 +74,7 @@ class EvidenceRecord {
       longitude: longitude ?? this.longitude,
       altitude: altitude ?? this.altitude,
       accuracy: accuracy ?? this.accuracy,
+      address: address ?? this.address,
       timestamp: timestamp ?? this.timestamp,
       sha256Hash: sha256Hash ?? this.sha256Hash,
       syncStatus: syncStatus ?? this.syncStatus,
@@ -94,6 +98,7 @@ class EvidenceRecord {
       'longitude': longitude,
       'altitude': altitude,
       'accuracy': accuracy,
+      'address': address,
       'timestamp': timestamp.toIso8601String(),
       'sha256Hash': sha256Hash,
       'syncStatus': syncStatus.name,
@@ -117,6 +122,7 @@ class EvidenceRecord {
           ? (map['altitude'] as num).toDouble()
           : null,
       accuracy: (map['accuracy'] as num).toDouble(),
+      address: map['address'] as String?,
       timestamp: DateTime.parse(map['timestamp'] as String),
       sha256Hash: map['sha256Hash'] as String,
       syncStatus:
@@ -139,6 +145,7 @@ class EvidenceRecord {
       'longitude': longitude,
       'altitude': altitude,
       'accuracy': accuracy,
+      'address': address,
       'timestamp': timestamp.toIso8601String(),
       'sha256_hash': sha256Hash,
       'sync_status': syncStatus.name,
@@ -157,6 +164,7 @@ class EvidenceRecord {
           ? (json['altitude'] as num).toDouble()
           : null,
       accuracy: (json['accuracy'] as num).toDouble(),
+      address: json['address'] as String?,
       timestamp: DateTime.parse(json['timestamp'] as String),
       sha256Hash: json['sha256_hash'] as String,
       syncStatus: SyncStatusExtension.fromString(

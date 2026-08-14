@@ -13,6 +13,8 @@ from app.services.cloudinary_service import upload_evidence
 
 router = APIRouter()
 
+import requests
+
 @router.post("/upload", response_model=EvidenceResponse)
 async def upload_evidence_endpoint(
     capture_id: str = Form(...),
@@ -24,6 +26,7 @@ async def upload_evidence_endpoint(
     gps_accuracy: float = Form(...),
     capture_timestamp: str = Form(...),
     altitude: float = Form(None),
+    address: str = Form(None),
     file: UploadFile = File(...),
     db: Session = Depends(get_db),
     current_user: User = Depends(require_authenticated_user)
@@ -50,6 +53,22 @@ async def upload_evidence_endpoint(
             }
         )
 
+    # Perform reverse geocoding on backend if address is missing
+    final_address = address
+    if not final_address:
+        try:
+            headers = {"User-Agent": "GeoEvidence-Backend/1.0"}
+            resp = requests.get(
+                f"https://nominatim.openstreetmap.org/reverse?format=json&lat={latitude}&lon={longitude}",
+                headers=headers,
+                timeout=5
+            )
+            if resp.status_code == 200:
+                data = resp.json()
+                final_address = data.get("display_name")
+        except Exception as e:
+            print(f"Reverse geocoding failed: {e}")
+
     try:
         context = {
             "capture_id": capture_id,
@@ -74,6 +93,7 @@ async def upload_evidence_endpoint(
         longitude=longitude,
         altitude=altitude,
         gps_accuracy=gps_accuracy,
+        address=final_address,
         capture_timestamp=dt_capture,
         status="VALID"
     )

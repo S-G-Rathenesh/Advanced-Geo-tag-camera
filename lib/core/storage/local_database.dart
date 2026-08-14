@@ -21,8 +21,9 @@ class LocalDatabase {
 
     return openDatabase(
       path,
-      version: AppConstants.databaseVersion,
+      version: 2, // Incremented version to add address
       onCreate: _onCreate,
+      onUpgrade: _onUpgrade,
     );
   }
 
@@ -38,6 +39,7 @@ class LocalDatabase {
         longitude       REAL NOT NULL,
         altitude        REAL,
         accuracy        REAL NOT NULL,
+        address         TEXT,
         timestamp       TEXT NOT NULL,
         sha256Hash      TEXT NOT NULL,
         syncStatus      TEXT NOT NULL DEFAULT 'pending',
@@ -53,6 +55,12 @@ class LocalDatabase {
       CREATE INDEX idx_sync_status
       ON ${AppConstants.evidenceTable} (syncStatus)
     ''');
+  }
+
+  static Future<void> _onUpgrade(Database db, int oldVersion, int newVersion) async {
+    if (oldVersion < 2) {
+      await db.execute('ALTER TABLE ${AppConstants.evidenceTable} ADD COLUMN address TEXT');
+    }
   }
 
   /// Close the database (e.g. on app termination).

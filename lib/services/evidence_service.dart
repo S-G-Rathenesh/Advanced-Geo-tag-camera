@@ -63,6 +63,7 @@ class EvidenceService extends ChangeNotifier {
     required double longitude,
     double? altitude,
     required double accuracy,
+    String? address,
   }) async {
     // Web platform guard — dart:io and sqflite not available on web
     if (kIsWeb) {
@@ -105,6 +106,7 @@ class EvidenceService extends ChangeNotifier {
       longitude: longitude,
       altitude: altitude,
       accuracy: accuracy,
+      address: address,
       timestamp: now,
       sha256Hash: sha256Hash,
       syncStatus: SyncStatus.pending,

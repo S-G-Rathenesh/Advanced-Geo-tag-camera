@@ -143,6 +143,8 @@ class _EvidenceDetailsScreenState extends State<EvidenceDetailsScreen> {
                 iconColor: AppTheme.statusSynced,
                 children: [
                   _DetailRow(
+                      'Address', record.address ?? 'Address unavailable'),
+                  _DetailRow(
                       'Latitude', record.latitude.toStringAsFixed(6)),
                   _DetailRow(
                       'Longitude', record.longitude.toStringAsFixed(6)),

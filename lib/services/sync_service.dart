@@ -15,8 +15,8 @@ import '../models/sync_status.dart';
 
 /// Synchronization service for uploading pending evidence to the backend.
 ///
-/// Currently uses mock responses. When the FastAPI backend is ready,
-/// replace [_uploadToServer] with real HTTP calls via [ApiClient].
+/// Executes multi-part binary uploads of AES-encrypted evidence to the FastAPI backend,
+/// verifying payload SHA-256 integrity and persisting metadata in Neon PostgreSQL.
 class SyncService extends ChangeNotifier {
   final EvidenceQueueDao _dao;
   final Connectivity _connectivity;
@@ -95,7 +95,7 @@ class SyncService extends ChangeNotifier {
       await _dao.updateSyncStatus(record.captureId, SyncStatus.syncing);
       notifyListeners();
 
-      // Mock upload – simulate server round-trip
+      // Upload encrypted payload to FastAPI backend
       final success = await _uploadToServer(record);
 
       if (success) {
@@ -148,6 +148,9 @@ class SyncService extends ChangeNotifier {
         
       if (record.altitude != null) {
         request.fields['altitude'] = record.altitude.toString();
+      }
+      if (record.address != null) {
+        request.fields['address'] = record.address!;
       }
         
       request.files.add(

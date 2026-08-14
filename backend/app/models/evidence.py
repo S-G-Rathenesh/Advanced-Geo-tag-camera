@@ -21,6 +21,7 @@ class Evidence(Base):
     longitude = Column(Float, nullable=False, index=True)
     altitude = Column(Float)
     gps_accuracy = Column(Float, nullable=False)
+    address = Column(String, nullable=True)
     
     capture_timestamp = Column(DateTime(timezone=True), nullable=False, index=True)
     upload_timestamp = Column(DateTime(timezone=True), server_default=func.now())

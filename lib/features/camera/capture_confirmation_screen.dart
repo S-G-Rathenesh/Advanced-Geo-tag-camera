@@ -1,7 +1,9 @@
+import 'dart:convert';
 import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
+import 'package:http/http.dart' as http;
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 
@@ -34,6 +36,7 @@ class _CaptureConfirmationScreenState
 
   Position? _position;
   String? _deviceId;
+  String? _address;
   bool _isLoadingLocation = true;
   bool _isProcessing = false;
   String? _locationError;
@@ -44,15 +47,39 @@ class _CaptureConfirmationScreenState
     _loadMetadata();
   }
 
+  Future<void> _fetchAddress(double lat, double lon) async {
+    try {
+      final url = Uri.parse(
+          'https://nominatim.openstreetmap.org/reverse?format=json&lat=$lat&lon=$lon');
+      final response = await http.get(url, headers: {
+        'User-Agent': 'GeoEvidence-App/1.0',
+      }).timeout(const Duration(seconds: 5));
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        if (mounted) {
+          setState(() {
+            _address = data['display_name'];
+          });
+        }
+      }
+    } catch (_) {
+      // Ignore errors, we'll fall back to backend or show unavailable
+    }
+  }
+
   Future<void> _loadMetadata() async {
     setState(() {
       _isLoadingLocation = true;
       _locationError = null;
+      _address = null;
     });
 
     // Get location
     try {
       _position = await _locationService.getCurrentPosition();
+      // Start fetching address in background without blocking
+      _fetchAddress(_position!.latitude, _position!.longitude);
     } catch (e) {
       _locationError = e.toString();
     }
@@ -108,6 +135,7 @@ class _CaptureConfirmationScreenState
         longitude: _position!.longitude,
         altitude: _position!.altitude,
         accuracy: _position!.accuracy,
+        address: _address,
       );
 
       if (!mounted) return;
@@ -271,6 +299,13 @@ class _CaptureConfirmationScreenState
                                     ),
                                   )
                                 else ...[
+                                  if (_address != null)
+                                    _MetadataRow(
+                                      icon: Icons.location_city_rounded,
+                                      label: 'Address',
+                                      value: _address!,
+                                      valueColor: const Color(0xFF00BFA6),
+                                    ),
                                   _MetadataRow(
                                     icon: Icons.location_on_rounded,
                                     label: 'Latitude',
