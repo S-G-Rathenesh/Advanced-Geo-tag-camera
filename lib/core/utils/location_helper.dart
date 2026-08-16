@@ -1,3 +1,4 @@
+import 'package:flutter/services.dart';
 import 'package:geolocator/geolocator.dart';
 
 import '../constants/app_constants.dart';
@@ -8,9 +9,19 @@ import '../constants/app_constants.dart';
 /// Validates that accuracy meets the configurable threshold before
 /// accepting a capture.
 class LocationHelper {
+  static const EventChannel _gnssChannel = EventChannel('com.geotag.evidence/gnss');
+
   const LocationHelper();
 
-  /// Check whether location services are enabled.
+  /// Listen to native Android GNSS status for used constellations.
+  Stream<List<String>> get gnssConstellationsStream {
+    return _gnssChannel.receiveBroadcastStream().map((event) {
+      if (event is List) {
+        return event.map((e) => e.toString()).toList();
+      }
+      return <String>[];
+    });
+  }
   Future<bool> isLocationServiceEnabled() async {
     return Geolocator.isLocationServiceEnabled();
   }
@@ -65,11 +76,7 @@ class LocationHelper {
         timeLimit: AppConstants.locationTimeout,
       );
     } catch (e) {
-      final lastKnown = await Geolocator.getLastKnownPosition();
-      if (lastKnown != null) {
-        return lastKnown;
-      }
-      rethrow;
+      throw Exception('Failed to get a high-accuracy GPS fix in time. Please wait for a valid GNSS fix in an open area.');
     }
   }
 

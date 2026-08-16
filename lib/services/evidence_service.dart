@@ -64,6 +64,7 @@ class EvidenceService extends ChangeNotifier {
     double? altitude,
     required double accuracy,
     String? address,
+    List<String> gnssConstellations = const [],
   }) async {
     // Web platform guard — dart:io and sqflite not available on web
     if (kIsWeb) {
@@ -74,7 +75,7 @@ class EvidenceService extends ChangeNotifier {
     }
 
     final captureId = _idGenerator.generate();
-    final now = DateTime.now();
+    final now = DateTime.now().toUtc();
 
     // Read raw image bytes
     final imageFile = File(imagePath);
@@ -111,6 +112,7 @@ class EvidenceService extends ChangeNotifier {
       sha256Hash: sha256Hash,
       syncStatus: SyncStatus.pending,
       ivBase64: encrypted['iv'],
+      gnssConstellations: gnssConstellations,
       createdAt: now,
       updatedAt: now,
     );

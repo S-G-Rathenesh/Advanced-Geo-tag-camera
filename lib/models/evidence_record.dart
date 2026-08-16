@@ -21,6 +21,7 @@ class EvidenceRecord {
   final SyncStatus syncStatus;
   final String? ivBase64;
   final int retryCount;
+  final List<String> gnssConstellations;
   final DateTime createdAt;
   final DateTime updatedAt;
 
@@ -40,6 +41,7 @@ class EvidenceRecord {
     this.syncStatus = SyncStatus.pending,
     this.ivBase64,
     this.retryCount = 0,
+    this.gnssConstellations = const [],
     required this.createdAt,
     required this.updatedAt,
   });
@@ -61,6 +63,7 @@ class EvidenceRecord {
     SyncStatus? syncStatus,
     String? ivBase64,
     int? retryCount,
+    List<String>? gnssConstellations,
     DateTime? createdAt,
     DateTime? updatedAt,
   }) {
@@ -80,6 +83,7 @@ class EvidenceRecord {
       syncStatus: syncStatus ?? this.syncStatus,
       ivBase64: ivBase64 ?? this.ivBase64,
       retryCount: retryCount ?? this.retryCount,
+      gnssConstellations: gnssConstellations ?? this.gnssConstellations,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
     );
@@ -104,6 +108,7 @@ class EvidenceRecord {
       'syncStatus': syncStatus.name,
       'ivBase64': ivBase64,
       'retryCount': retryCount,
+      'gnssConstellations': gnssConstellations.join(','),
       'createdAt': createdAt.toIso8601String(),
       'updatedAt': updatedAt.toIso8601String(),
     };
@@ -129,6 +134,7 @@ class EvidenceRecord {
           SyncStatusExtension.fromString(map['syncStatus'] as String),
       ivBase64: map['ivBase64'] as String?,
       retryCount: (map['retryCount'] as int?) ?? 0,
+      gnssConstellations: (map['gnssConstellations'] as String?)?.split(',').where((s) => s.isNotEmpty).toList() ?? [],
       createdAt: DateTime.parse(map['createdAt'] as String),
       updatedAt: DateTime.parse(map['updatedAt'] as String),
     );
@@ -149,6 +155,7 @@ class EvidenceRecord {
       'timestamp': timestamp.toIso8601String(),
       'sha256_hash': sha256Hash,
       'iv_base64': ivBase64,
+      'gnss_constellations': gnssConstellations,
       'sync_status': syncStatus.name,
     };
   }
@@ -171,6 +178,7 @@ class EvidenceRecord {
       syncStatus: SyncStatusExtension.fromString(
           json['status'] as String? ?? 'synced'), // Assuming API response means it's synced
       ivBase64: json['iv_base64'] as String?,
+      gnssConstellations: (json['gnss_constellations'] as List<dynamic>?)?.map((e) => e.toString()).toList() ?? [],
       createdAt: DateTime.tryParse(json['upload_timestamp'] as String? ?? '') ??
           DateTime.now(),
       updatedAt: DateTime.tryParse(json['upload_timestamp'] as String? ?? '') ??

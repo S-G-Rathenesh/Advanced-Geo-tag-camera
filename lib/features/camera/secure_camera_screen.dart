@@ -17,6 +17,7 @@ import '../../services/auth_service.dart';
 import '../../services/camera_service.dart';
 import '../../services/evidence_service.dart';
 import '../../services/sync_service.dart';
+import '../../services/location_service.dart';
 
 enum CaptureState {
   initializing,
@@ -45,6 +46,9 @@ class _SecureCameraScreenState extends State<SecureCameraScreen>
   StreamSubscription<Position>? _positionStream;
   Position? _currentPosition;
   
+  StreamSubscription<List<String>>? _gnssStream;
+  List<String> _currentConstellations = [];
+  
   CaptureState _captureState = CaptureState.initializing;
   String _statusMessage = 'Initializing Secure Camera...';
   String? _errorMessage;
@@ -63,6 +67,7 @@ class _SecureCameraScreenState extends State<SecureCameraScreen>
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
     _positionStream?.cancel();
+    _gnssStream?.cancel();
     _cameraService.dispose();
     super.dispose();
   }
@@ -72,6 +77,7 @@ class _SecureCameraScreenState extends State<SecureCameraScreen>
     if (state == AppLifecycleState.inactive) {
       _cameraService.dispose();
       _positionStream?.cancel();
+      _gnssStream?.cancel();
     } else if (state == AppLifecycleState.resumed) {
       _initCamera();
       _initGps();
@@ -111,6 +117,15 @@ class _SecureCameraScreenState extends State<SecureCameraScreen>
     });
 
     _positionStream?.cancel();
+    _gnssStream?.cancel();
+    
+    _gnssStream = LocationService().gnssConstellationsStream.listen((constellations) {
+      if (!mounted) return;
+      setState(() {
+        _currentConstellations = constellations;
+      });
+    });
+
     _positionStream = Geolocator.getPositionStream(
       locationSettings: const LocationSettings(
         accuracy: LocationAccuracy.high,
@@ -203,11 +218,13 @@ class _SecureCameraScreenState extends State<SecureCameraScreen>
         _statusMessage = 'Securing evidence...';
       });
 
-      // 2. Validate GPS (already checked by state, but grab snapshot)
-      final pos = _currentPosition;
+      // 2. Validate GPS (request fresh lock)
+      Position? pos;
       String? address;
 
-      if (!kIsWeb && pos != null) {
+      if (!kIsWeb) {
+        // This natively enforces the accuracy threshold and throws if unavailable
+        pos = await LocationService().getValidatedPosition();
         address = await _fetchAddress(pos.latitude, pos.longitude);
       }
 
@@ -231,6 +248,7 @@ class _SecureCameraScreenState extends State<SecureCameraScreen>
         altitude: pos?.altitude ?? 0.0,
         accuracy: pos?.accuracy ?? 0.0,
         address: address,
+        gnssConstellations: _currentConstellations,
       );
 
       if (!mounted) return;
@@ -487,6 +505,26 @@ class _SecureCameraScreenState extends State<SecureCameraScreen>
                       ],
                     ),
                   ),
+                  if (_currentConstellations.isNotEmpty && !kIsWeb)
+                    Padding(
+                      padding: const EdgeInsets.only(top: 4),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF0F172A).withAlpha(220),
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(color: const Color(0xFF334155)),
+                        ),
+                        child: Text(
+                          _currentConstellations.join(' • '),
+                          style: GoogleFonts.inter(
+                            color: const Color(0xFF94A3B8),
+                            fontSize: 9,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ),
+                    ),
                   if (isFront)
                     Padding(
                       padding: const EdgeInsets.only(top: 8),

@@ -21,7 +21,7 @@ class LocalDatabase {
 
     return openDatabase(
       path,
-      version: 2, // Incremented version to add address
+      version: 3, // Incremented version to add gnssConstellations
       onCreate: _onCreate,
       onUpgrade: _onUpgrade,
     );
@@ -45,6 +45,7 @@ class LocalDatabase {
         syncStatus      TEXT NOT NULL DEFAULT 'pending',
         ivBase64        TEXT,
         retryCount      INTEGER NOT NULL DEFAULT 0,
+        gnssConstellations TEXT,
         createdAt       TEXT NOT NULL,
         updatedAt       TEXT NOT NULL
       )
@@ -60,6 +61,9 @@ class LocalDatabase {
   static Future<void> _onUpgrade(Database db, int oldVersion, int newVersion) async {
     if (oldVersion < 2) {
       await db.execute('ALTER TABLE ${AppConstants.evidenceTable} ADD COLUMN address TEXT');
+    }
+    if (oldVersion < 3) {
+      await db.execute('ALTER TABLE ${AppConstants.evidenceTable} ADD COLUMN gnssConstellations TEXT');
     }
   }
 

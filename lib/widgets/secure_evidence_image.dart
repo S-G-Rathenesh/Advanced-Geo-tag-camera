@@ -82,7 +82,9 @@ class _SecureEvidenceImageState extends State<SecureEvidenceImage> {
           _integrityError = null;
         });
         if (_decryptedBytes != null) {
-          widget.onVerified?.call(_decryptedBytes!);
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            if (mounted) widget.onVerified?.call(_decryptedBytes!);
+          });
         }
       }
       return;
@@ -95,7 +97,9 @@ class _SecureEvidenceImageState extends State<SecureEvidenceImage> {
           _integrityError = _errorCache[cacheKey];
         });
         if (_errorCache[cacheKey] != null) {
-          widget.onError?.call(_errorCache[cacheKey]!);
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            if (mounted) widget.onError?.call(_errorCache[cacheKey]!);
+          });
         }
       }
       return;
@@ -107,7 +111,7 @@ class _SecureEvidenceImageState extends State<SecureEvidenceImage> {
       Uint8List encryptedBytes;
       if (widget.record.imagePath.startsWith('http')) {
         // Fetch encrypted payload from cloud (Cloudinary raw resource)
-        final response = await http.get(Uri.parse(widget.record.imagePath));
+        final response = await http.get(Uri.parse(widget.record.imagePath)).timeout(const Duration(seconds: 15));
         if (response.statusCode != 200) {
           throw Exception('Failed to download encrypted payload');
         }
@@ -144,7 +148,9 @@ class _SecureEvidenceImageState extends State<SecureEvidenceImage> {
               _isVerifying = false;
               _integrityError = null;
             });
-            widget.onVerified?.call(decrypted);
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              if (mounted) widget.onVerified?.call(decrypted);
+            });
           }
         } else {
           _errorCache[cacheKey] = 'Integrity Verification Failed: Hash mismatch.';
@@ -153,7 +159,9 @@ class _SecureEvidenceImageState extends State<SecureEvidenceImage> {
               _isVerifying = false;
               _integrityError = _errorCache[cacheKey];
             });
-            widget.onError?.call(_errorCache[cacheKey]!);
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              if (mounted) widget.onError?.call(_errorCache[cacheKey]!);
+            });
           }
         }
       } else {
@@ -163,7 +171,9 @@ class _SecureEvidenceImageState extends State<SecureEvidenceImage> {
             _isVerifying = false;
             _integrityError = _errorCache[cacheKey];
           });
-          widget.onError?.call(_errorCache[cacheKey]!);
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            if (mounted) widget.onError?.call(_errorCache[cacheKey]!);
+          });
         }
       }
     } catch (e) {
@@ -173,7 +183,9 @@ class _SecureEvidenceImageState extends State<SecureEvidenceImage> {
           _isVerifying = false;
           _integrityError = _errorCache[cacheKey];
         });
-        widget.onError?.call(_errorCache[cacheKey]!);
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (mounted) widget.onError?.call(_errorCache[cacheKey]!);
+        });
       }
     }
   }

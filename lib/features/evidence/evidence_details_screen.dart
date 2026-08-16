@@ -367,6 +367,7 @@ class _EvidenceDetailsScreenState extends State<EvidenceDetailsScreen> {
                         _buildDataRow('Coordinates', _formatCoordinates(record.latitude, record.longitude), canCopy: true),
                         _buildDataRow('Altitude', record.altitude != null ? '${record.altitude!.toStringAsFixed(1)} m' : 'Altitude unavailable'),
                         _buildDataRow('GPS Accuracy', '±${record.accuracy.toStringAsFixed(1)} m'),
+                        _buildDataRow('Constellations', record.gnssConstellations.isEmpty ? 'Unverified' : record.gnssConstellations.join(', ')),
                       ],
                     ),
                   ),

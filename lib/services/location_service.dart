@@ -12,6 +12,8 @@ class LocationService {
   LocationService({LocationHelper? locationHelper})
       : _locationHelper = locationHelper ?? const LocationHelper();
 
+  Stream<List<String>> get gnssConstellationsStream => _locationHelper.gnssConstellationsStream;
+
   /// Check if location services are available and permitted.
   Future<LocationStatus> checkStatus() async {
     final serviceEnabled = await _locationHelper.isLocationServiceEnabled();
