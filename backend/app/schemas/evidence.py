@@ -11,6 +11,7 @@ class EvidenceUploadRequest(BaseModel):
     altitude: float | None = None
     gps_accuracy: float
     address: str | None = None
+    gnss_constellations: str | None = None
     capture_timestamp: datetime
 
 class EvidenceResponse(BaseModel):
@@ -25,6 +26,7 @@ class EvidenceResponse(BaseModel):
     altitude: float | None
     gps_accuracy: float
     address: str | None
+    gnss_constellations: str | None
     capture_timestamp: datetime
     upload_timestamp: datetime
     status: str

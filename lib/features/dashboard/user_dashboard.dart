@@ -19,12 +19,19 @@ class UserDashboard extends StatefulWidget {
 
 class _UserDashboardState extends State<UserDashboard> {
   int _currentIndex = 0;
+  final GlobalKey<CloudEvidenceScreenState> _myEvidenceKey = GlobalKey<CloudEvidenceScreenState>();
 
   void _onTabTapped(int index) {
     if (index == 1) {
       Navigator.pushNamed(context, AppRoutes.secureCamera);
       return;
     }
+
+    if (index == 2 && _currentIndex != 2) {
+      // Trigger a fresh API fetch when navigating to My Evidence
+      _myEvidenceKey.currentState?.fetchEvidence();
+    }
+
     setState(() {
       _currentIndex = index;
     });
@@ -39,7 +46,8 @@ class _UserDashboardState extends State<UserDashboard> {
     final List<Widget> pages = [
       _buildHomeSummary(user, evidenceService),
       const SizedBox.shrink(), // Capture placeholder
-      const CloudEvidenceScreen(
+      CloudEvidenceScreen(
+        key: _myEvidenceKey,
         title: 'My Evidence',
         isMyEvidence: true,
         showBottomNav: true,
@@ -275,57 +283,81 @@ class _UserDashboardState extends State<UserDashboard> {
 
                   const SizedBox(height: 18),
 
-                  // Dual Action Buttons
-                  Row(
-                    children: [
-                      Expanded(
-                        child: SizedBox(
-                          height: 42,
-                          child: ElevatedButton(
-                            onPressed: () => _onTabTapped(1),
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: const Color(0xFF2563EB),
-                              foregroundColor: Colors.white,
-                              elevation: 0,
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(10),
-                              ),
-                            ),
-                            child: Text(
-                              'Capture Evidence',
-                              style: GoogleFonts.inter(
-                                fontSize: 13.5,
-                                fontWeight: FontWeight.w700,
-                              ),
+                  // Action Buttons (Responsive)
+                  LayoutBuilder(
+                    builder: (context, constraints) {
+                      final bool isNarrow = constraints.maxWidth < 320;
+
+                      final captureButton = SizedBox(
+                        height: 42,
+                        width: isNarrow ? double.infinity : null,
+                        child: ElevatedButton(
+                          onPressed: () => _onTabTapped(1),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: const Color(0xFF2563EB),
+                            foregroundColor: Colors.white,
+                            elevation: 0,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(10),
                             ),
                           ),
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: SizedBox(
-                          height: 42,
-                          child: OutlinedButton(
-                            onPressed: () => _onTabTapped(2),
-                            style: OutlinedButton.styleFrom(
-                              backgroundColor: const Color(0xFF0F1E36),
-                              side: const BorderSide(color: Color(0xFF1E3A5F)),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(10),
-                              ),
+                          child: Text(
+                            'Capture',
+                            style: GoogleFonts.inter(
+                              fontSize: 13.5,
+                              fontWeight: FontWeight.w700,
                             ),
-                            child: Text(
-                              'View My Evidence',
-                              style: GoogleFonts.inter(
-                                color: Colors.white,
-                                fontSize: 13,
-                                fontWeight: FontWeight.w700,
-                              ),
-                            ),
+                            textAlign: TextAlign.center,
+                            overflow: TextOverflow.ellipsis,
+                            maxLines: 1,
                           ),
                         ),
-                      ),
-                    ],
+                      );
+
+                      final viewEvidenceButton = SizedBox(
+                        height: 42,
+                        width: isNarrow ? double.infinity : null,
+                        child: OutlinedButton(
+                          onPressed: () => _onTabTapped(2),
+                          style: OutlinedButton.styleFrom(
+                            backgroundColor: const Color(0xFF0F1E36),
+                            side: const BorderSide(color: Color(0xFF1E3A5F)),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                          ),
+                          child: Text(
+                            'View My Evidence',
+                            style: GoogleFonts.inter(
+                              color: Colors.white,
+                              fontSize: 13,
+                              fontWeight: FontWeight.w700,
+                            ),
+                            textAlign: TextAlign.center,
+                            overflow: TextOverflow.ellipsis,
+                            maxLines: 1,
+                          ),
+                        ),
+                      );
+
+                      if (isNarrow) {
+                        return Column(
+                          children: [
+                            captureButton,
+                            const SizedBox(height: 12),
+                            viewEvidenceButton,
+                          ],
+                        );
+                      }
+
+                      return Row(
+                        children: [
+                          Expanded(child: captureButton),
+                          const SizedBox(width: 12),
+                          Expanded(child: viewEvidenceButton),
+                        ],
+                      );
+                    },
                   ),
                 ],
               ),

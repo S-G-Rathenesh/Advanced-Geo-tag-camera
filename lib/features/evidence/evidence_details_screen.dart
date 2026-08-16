@@ -16,6 +16,7 @@ import '../../models/user_model.dart';
 import '../../services/api_service.dart';
 import '../../services/auth_service.dart';
 import '../../widgets/secure_evidence_image.dart';
+import '../../widgets/evidence_view_protection_overlay.dart';
 
 /// Secure Detail view for a single evidence record.
 class EvidenceDetailsScreen extends StatefulWidget {
@@ -32,6 +33,31 @@ class _EvidenceDetailsScreenState extends State<EvidenceDetailsScreen> {
   Uint8List? _verifiedBytes;
   String? _verificationError;
   bool _hasLoaded = false;
+  static const MethodChannel _securityChannel = MethodChannel('com.geotag.evidence/security');
+
+  @override
+  void initState() {
+    super.initState();
+    _enableSecureMode();
+  }
+
+  @override
+  void dispose() {
+    _disableSecureMode();
+    super.dispose();
+  }
+
+  Future<void> _enableSecureMode() async {
+    try {
+      if (Platform.isAndroid) await _securityChannel.invokeMethod('enableSecureMode');
+    } catch (_) {}
+  }
+
+  Future<void> _disableSecureMode() async {
+    try {
+      if (Platform.isAndroid) await _securityChannel.invokeMethod('disableSecureMode');
+    } catch (_) {}
+  }
 
   String _formatCoordinates(double? lat, double? lon) {
     if (lat == null || lon == null) return 'Location unavailable';
@@ -128,10 +154,11 @@ class _EvidenceDetailsScreenState extends State<EvidenceDetailsScreen> {
         ));
       }
     } catch (e) {
+      debugPrint('Download failed: $e');
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-          content: Text('Download failed. Please try again.'),
-          backgroundColor: Color(0xFFEF4444),
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: Text('Download failed: $e'),
+          backgroundColor: const Color(0xFFEF4444),
         ));
       }
     } finally {
@@ -228,22 +255,42 @@ class _EvidenceDetailsScreenState extends State<EvidenceDetailsScreen> {
                     height: 300,
                     width: double.infinity,
                     color: Colors.black,
-                    child: SecureEvidenceImage(
-                      record: record,
-                      fit: BoxFit.contain,
-                      onVerified: (bytes) {
-                        setState(() {
-                          _verifiedBytes = bytes;
-                          _verificationError = null;
-                        });
-                      },
-                      onError: (error) {
-                        setState(() {
-                          _verifiedBytes = null;
-                          _verificationError = error;
-                        });
-                      },
-                    ),
+                    child: Builder(builder: (context) {
+                      final isOfficer = context.read<AuthService>().currentUser?.role == UserRole.officer;
+                      
+                      final secureImage = SecureEvidenceImage(
+                        record: record,
+                        fit: BoxFit.contain,
+                        onVerified: (bytes) {
+                          setState(() {
+                            _verifiedBytes = bytes;
+                            _verificationError = null;
+                          });
+                        },
+                        onError: (error) {
+                          setState(() {
+                            _verifiedBytes = null;
+                            _verificationError = error;
+                          });
+                        },
+                      );
+
+                      if (isOfficer) {
+                        return EvidenceViewProtectionOverlay(
+                          onTriggered: () {
+                            if (mounted) {
+                              setState(() {
+                                _verifiedBytes = null;
+                                _verificationError = 'Security Alert: Unauthorized recording device detected.';
+                              });
+                            }
+                          },
+                          child: secureImage,
+                        );
+                      }
+                      
+                      return secureImage;
+                    }),
                   ),
 
                   // INTEGRITY VERIFIED

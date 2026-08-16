@@ -131,6 +131,30 @@ class ApiService {
   }
 
   EvidenceRecord _parseCloudEvidence(Map<String, dynamic> json) {
+    List<String> parsedConstellations = [];
+    if (json['gnss_constellations'] != null) {
+      try {
+        final decoded = jsonDecode(json['gnss_constellations'] as String);
+        if (decoded is List) {
+          parsedConstellations = decoded.map((e) => e.toString()).toList();
+        }
+      } catch (_) {
+        // Fallback if not valid JSON
+      }
+    }
+
+    print('\n[api_response]');
+    print('capture_id=${json['capture_id']}');
+    print('owner_id=${json['user_id']}');
+    print('latitude=${json['latitude']}');
+    print('longitude=${json['longitude']}');
+    print('accuracy=${json['gps_accuracy']}');
+    print('capture_timestamp=${json['capture_timestamp']}');
+    print('gnss_constellations=${json['gnss_constellations']}');
+    print('iv_present=${json['iv_base64'] != null}');
+    print('image_url=${json['image_url']}');
+    print('------\n');
+
     return EvidenceRecord(
       captureId: json['capture_id'],
       userId: json['user_id'],
@@ -145,8 +169,9 @@ class ApiService {
       sha256Hash: json['sha256_hash'],
       syncStatus: SyncStatus.synced,
       ivBase64: json['iv_base64'],
-      createdAt: DateTime.parse(json['capture_timestamp']),
-      updatedAt: DateTime.parse(json['capture_timestamp']),
+      gnssConstellations: parsedConstellations,
+      createdAt: DateTime.parse(json['upload_timestamp'] ?? json['capture_timestamp']),
+      updatedAt: DateTime.parse(json['upload_timestamp'] ?? json['capture_timestamp']),
     );
   }
 }

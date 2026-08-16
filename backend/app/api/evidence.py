@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException, status, UploadFile, File, Form
 from sqlalchemy.orm import Session
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import List
 from app.core.database import get_db
 from app.models.user import User
@@ -27,6 +27,7 @@ async def upload_evidence_endpoint(
     capture_timestamp: str = Form(...),
     altitude: float = Form(None),
     address: str = Form(None),
+    gnss_constellations: str = Form(None),
     iv_base64: str = Form(None),
     file: UploadFile = File(...),
     db: Session = Depends(get_db),
@@ -34,6 +35,9 @@ async def upload_evidence_endpoint(
 ):
     try:
         dt_capture = datetime.fromisoformat(capture_timestamp)
+        # Force UTC timezone if missing
+        if dt_capture.tzinfo is None:
+            dt_capture = dt_capture.replace(tzinfo=timezone.utc)
     except ValueError:
         raise HTTPException(status_code=400, detail="Invalid timestamp format")
 
@@ -95,10 +99,22 @@ async def upload_evidence_endpoint(
         altitude=altitude,
         gps_accuracy=gps_accuracy,
         address=final_address,
+        gnss_constellations=gnss_constellations,
         capture_timestamp=dt_capture,
         status="VALID",
         iv_base64=iv_base64
     )
+
+    print("\n[backend_insert]")
+    print(f"capture_id={capture_id}")
+    print(f"owner_id={current_user.id}")
+    print(f"latitude={latitude}")
+    print(f"longitude={longitude}")
+    print(f"accuracy={gps_accuracy}")
+    print(f"capture_timestamp={dt_capture.isoformat()}")
+    print(f"gnss_constellations={gnss_constellations}")
+    print("------\n")
+
     db.add(evidence)
     db.commit()
     db.refresh(evidence)

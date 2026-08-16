@@ -7,8 +7,8 @@ import '../../models/evidence_record.dart';
 import '../../models/sync_status.dart';
 import '../../models/user_model.dart';
 import '../../services/api_service.dart';
-import '../../services/api_service.dart';
 import '../../services/auth_service.dart';
+import '../../services/evidence_service.dart';
 import '../../widgets/secure_evidence_image.dart';
 
 /// All Evidence Screen matching the tactical mobile UI design.
@@ -27,10 +27,10 @@ class CloudEvidenceScreen extends StatefulWidget {
   });
 
   @override
-  State<CloudEvidenceScreen> createState() => _CloudEvidenceScreenState();
+  CloudEvidenceScreenState createState() => CloudEvidenceScreenState();
 }
 
-class _CloudEvidenceScreenState extends State<CloudEvidenceScreen> {
+class CloudEvidenceScreenState extends State<CloudEvidenceScreen> {
   List<EvidenceRecord> _evidenceList = [];
   Map<String, String> _userNames = {};
   Map<String, String> _userRoles = {};
@@ -44,7 +44,7 @@ class _CloudEvidenceScreenState extends State<CloudEvidenceScreen> {
   @override
   void initState() {
     super.initState();
-    _fetchEvidence();
+    fetchEvidence();
   }
 
   @override
@@ -53,20 +53,30 @@ class _CloudEvidenceScreenState extends State<CloudEvidenceScreen> {
     super.dispose();
   }
 
-  Future<void> _fetchEvidence() async {
+  bool _isFetching = false;
+
+  Future<void> fetchEvidence() async {
+    if (_isFetching) return;
+    _isFetching = true;
+    
     final currentUser = context.read<AuthService>().currentUser;
     if (currentUser?.role == UserRole.user && !widget.isMyEvidence) {
-      setState(() {
-        _isLoading = false;
-        _error = 'Access Restricted: Users are only permitted to view their own evidence.';
-      });
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+          _error = 'Access Restricted: Users are only permitted to view their own evidence.';
+        });
+      }
+      _isFetching = false;
       return;
     }
 
-    setState(() {
-      _isLoading = true;
-      _error = null;
-    });
+    if (mounted) {
+      setState(() {
+        _isLoading = true;
+        _error = null;
+      });
+    }
 
     try {
       final apiService = context.read<ApiService>();
@@ -97,6 +107,30 @@ class _CloudEvidenceScreenState extends State<CloudEvidenceScreen> {
           }
         }
       }
+      
+      // Offline-first: Merge local records
+      if (mounted) {
+        final localRecords = context.read<EvidenceService>().evidenceList;
+        final mergedMap = <String, EvidenceRecord>{};
+        
+        for (final r in list) {
+          mergedMap[r.captureId] = r;
+        }
+        
+        for (final r in localRecords) {
+          if (!mergedMap.containsKey(r.captureId)) {
+            // Only merge if it belongs to current user OR user is supervisor/officer
+            if (r.userId == currentUser?.username || currentUser?.role != UserRole.user) {
+              mergedMap[r.captureId] = r;
+              userNames[r.userId] = r.userId; // local record userId is just the username
+              userRoles[r.userId] = currentUser?.roleLabel ?? 'USER';
+            }
+          }
+        }
+        
+        list = mergedMap.values.toList();
+        list.sort((a, b) => b.timestamp.compareTo(a.timestamp));
+      }
 
       setState(() {
         _evidenceList = list;
@@ -105,10 +139,14 @@ class _CloudEvidenceScreenState extends State<CloudEvidenceScreen> {
         _isLoading = false;
       });
     } catch (e) {
-      setState(() {
-        _error = e.toString();
-        _isLoading = false;
-      });
+      if (mounted) {
+        setState(() {
+          _error = e.toString();
+          _isLoading = false;
+        });
+      }
+    } finally {
+      _isFetching = false;
     }
   }
 
@@ -158,7 +196,7 @@ class _CloudEvidenceScreenState extends State<CloudEvidenceScreen> {
             ),
       body: SafeArea(
         child: RefreshIndicator(
-          onRefresh: _fetchEvidence,
+          onRefresh: fetchEvidence,
           color: const Color(0xFF2563EB),
           backgroundColor: const Color(0xFF0B1322),
           child: CustomScrollView(
@@ -296,7 +334,7 @@ class _CloudEvidenceScreenState extends State<CloudEvidenceScreen> {
                           ),
                           const SizedBox(height: 16),
                           ElevatedButton(
-                            onPressed: _fetchEvidence,
+                            onPressed: fetchEvidence,
                             style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF2563EB)),
                             child: const Text('Retry'),
                           ),

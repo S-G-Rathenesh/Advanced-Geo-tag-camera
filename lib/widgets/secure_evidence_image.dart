@@ -54,6 +54,10 @@ class _SecureEvidenceImageState extends State<SecureEvidenceImage> {
     super.didUpdateWidget(oldWidget);
     if (oldWidget.record.captureId != widget.record.captureId ||
         oldWidget.record.ivBase64 != widget.record.ivBase64) {
+      // Clear error cache if IV was updated so it can retry decryption
+      if (oldWidget.record.ivBase64 != widget.record.ivBase64) {
+        _errorCache.remove(widget.record.captureId);
+      }
       _triggerAuditAndVerify();
     }
   }
@@ -139,8 +143,20 @@ class _SecureEvidenceImageState extends State<SecureEvidenceImage> {
 
         // Recalculate SHA-256 on decrypted (original) image bytes
         final calculatedHash = hashService.generateSha256(decrypted);
+        final hashMatch = calculatedHash == widget.record.sha256Hash;
 
-        if (calculatedHash == widget.record.sha256Hash) {
+        print('\n[verification]');
+        print('capture_id=${widget.record.captureId}');
+        print('image_url_present=${widget.record.imagePath.startsWith('http')}');
+        print('iv_present=true');
+        print('download_started=true');
+        print('download_bytes=${encryptedBytes.length}');
+        print('decryption_success=true');
+        print('hash_match=$hashMatch');
+        print('verification_complete=true');
+        print('------\n');
+
+        if (hashMatch) {
           _decryptedCache[cacheKey] = decrypted;
           if (mounted) {
             setState(() {
@@ -177,7 +193,7 @@ class _SecureEvidenceImageState extends State<SecureEvidenceImage> {
         }
       }
     } catch (e) {
-      _errorCache[cacheKey] = 'Decryption failed: \${e.toString()}';
+      _errorCache[cacheKey] = 'Decryption failed: ${e.toString()}';
       if (mounted) {
         setState(() {
           _isVerifying = false;

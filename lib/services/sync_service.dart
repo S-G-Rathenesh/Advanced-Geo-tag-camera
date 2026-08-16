@@ -180,6 +180,9 @@ class SyncService extends ChangeNotifier {
       if (record.address != null) {
         request.fields['address'] = record.address!;
       }
+      if (record.gnssConstellations.isNotEmpty) {
+        request.fields['gnss_constellations'] = jsonEncode(record.gnssConstellations);
+      }
       if (record.ivBase64 != null) {
         request.fields['iv_base64'] = record.ivBase64!;
       }
@@ -200,6 +203,18 @@ class SyncService extends ChangeNotifier {
       if (token != null) {
         request.headers['Authorization'] = 'Bearer $token';
       }
+
+      print('\n[upload]');
+      print('capture_id=${request.fields['capture_id']}');
+      print('owner_id=${record.userId}');
+      print('latitude=${request.fields['latitude']}');
+      print('longitude=${request.fields['longitude']}');
+      print('accuracy=${request.fields['gps_accuracy']}');
+      print('capture_timestamp=${request.fields['capture_timestamp']}');
+      print('sha256_hash=${request.fields['sha256_hash']}');
+      print('iv_present=${request.fields['iv_base64'] != null}');
+      print('gnss_constellations=${request.fields['gnss_constellations']}');
+      print('------\n');
 
       // 3. Execute Upload
       final response = await request.send().timeout(AppConstants.apiTimeout);

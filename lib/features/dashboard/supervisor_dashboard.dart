@@ -19,12 +19,18 @@ class SupervisorDashboard extends StatefulWidget {
 
 class _SupervisorDashboardState extends State<SupervisorDashboard> {
   int _currentIndex = 0;
+  final GlobalKey<CloudEvidenceScreenState> _myEvidenceKey = GlobalKey<CloudEvidenceScreenState>();
 
   void _onTabTapped(int index) {
     if (index == 1) {
       Navigator.pushNamed(context, AppRoutes.secureCamera);
       return;
     }
+    
+    if (index == 2 && _currentIndex != 2) {
+      _myEvidenceKey.currentState?.fetchEvidence();
+    }
+    
     setState(() {
       _currentIndex = index;
     });
@@ -39,7 +45,8 @@ class _SupervisorDashboardState extends State<SupervisorDashboard> {
     final List<Widget> pages = [
       _buildHomeSummary(user, evidenceService),
       const SizedBox.shrink(), // Capture placeholder
-      const CloudEvidenceScreen(
+      CloudEvidenceScreen(
+        key: _myEvidenceKey,
         title: 'My Evidence',
         isMyEvidence: true,
         showBottomNav: true,

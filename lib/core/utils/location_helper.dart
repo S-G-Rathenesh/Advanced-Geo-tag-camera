@@ -71,10 +71,18 @@ class LocationHelper {
     }
 
     try {
-      return await Geolocator.getCurrentPosition(
+      if (!identical(0, 0.0)) {
+        // We're just checking if we can import geolocator_android. Actually, let's just use LocationSettings.
+        // If AndroidSettings is unavailable without importing, we'll use a standard LocationSettings, 
+        // but since we want to force location manager, let's use AndroidSettings if we can.
+        // Wait, instead of importing AndroidSettings which might require modifying pubspec, we can just ensure
+        // the timestamp is strictly fresh.
+      }
+      final position = await Geolocator.getCurrentPosition(
         desiredAccuracy: LocationAccuracy.high,
         timeLimit: AppConstants.locationTimeout,
       );
+      return position;
     } catch (e) {
       throw Exception('Failed to get a high-accuracy GPS fix in time. Please wait for a valid GNSS fix in an open area.');
     }
@@ -91,6 +99,16 @@ class LocationHelper {
   Future<Position> getValidatedPosition() async {
     final position = await getCurrentPosition();
 
+    // 1. Validate Freshness (must be within the last 15 seconds)
+    final age = DateTime.now().difference(position.timestamp);
+    if (age.inSeconds > 15) {
+      throw Exception(
+        'Location cache is stale (${age.inSeconds}s old). '
+        'Waiting for fresh GNSS fix...',
+      );
+    }
+
+    // 2. Validate Accuracy
     if (!meetsAccuracyThreshold(position)) {
       throw Exception(
         'GPS accuracy (${position.accuracy.toStringAsFixed(1)}m) '

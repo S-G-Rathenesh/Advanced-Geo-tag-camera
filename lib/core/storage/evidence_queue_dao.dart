@@ -10,11 +10,26 @@ class EvidenceQueueDao {
   /// Insert a new evidence record into the queue.
   Future<void> insert(EvidenceRecord record) async {
     final db = await LocalDatabase.database;
+    final map = record.toMap();
     await db.insert(
       AppConstants.evidenceTable,
-      record.toMap(),
+      map,
       conflictAlgorithm: ConflictAlgorithm.replace,
     );
+    
+    // TRACE LOCAL SQLITE
+    print('\n[sqlite_insert]');
+    print('capture_id=${map['captureId']}');
+    print('owner_id=${map['userId']}');
+    print('latitude=${map['latitude']}');
+    print('longitude=${map['longitude']}');
+    print('accuracy=${map['accuracy']}');
+    print('capture_timestamp=${map['timestamp']}');
+    print('sha256_hash=${map['sha256Hash']}');
+    print('iv_base64=${map['ivBase64']}');
+    print('gnss_constellations=${map['gnssConstellations']}');
+    print('sync_status=${map['syncStatus']}');
+    print('------\n');
   }
 
   /// Get all evidence records, optionally filtered by [status].

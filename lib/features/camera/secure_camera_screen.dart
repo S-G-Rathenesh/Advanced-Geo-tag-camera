@@ -251,6 +251,20 @@ class _SecureCameraScreenState extends State<SecureCameraScreen>
         gnssConstellations: _currentConstellations,
       );
 
+      debugPrint('\n[capture]');
+      debugPrint('capture_id=${evidence.captureId}');
+      debugPrint('owner_id=${evidence.userId}');
+      debugPrint('role=${authService.currentUser?.role.name}');
+      debugPrint('latitude=${evidence.latitude}');
+      debugPrint('longitude=${evidence.longitude}');
+      debugPrint('accuracy=${evidence.accuracy}');
+      debugPrint('position_timestamp=${pos?.timestamp}');
+      debugPrint('capture_timestamp_utc=${evidence.timestamp.toIso8601String()}');
+      debugPrint('gnss_constellations=${evidence.gnssConstellations}');
+      debugPrint('sha256=${evidence.sha256Hash}');
+      debugPrint('iv_present=${evidence.ivBase64 != null && evidence.ivBase64!.isNotEmpty}');
+      debugPrint('------\n');
+
       if (!mounted) return;
       HapticFeedback.lightImpact();
 

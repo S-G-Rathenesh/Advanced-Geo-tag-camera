@@ -53,6 +53,9 @@ class SecureStorageService {
 
   /// Clears all authentication data from secure storage.
   Future<void> clearAll() async {
-    await _storage.deleteAll();
+    await deleteToken();
+    await deleteRefreshToken();
+    // Intentionally omitting _storage.deleteAll() to prevent wiping the
+    // local AES-256-GCM encryption key used for evidence decryption.
   }
 }

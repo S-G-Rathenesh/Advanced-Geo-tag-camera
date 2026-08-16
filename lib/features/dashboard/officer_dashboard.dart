@@ -18,12 +18,18 @@ class OfficerDashboard extends StatefulWidget {
 
 class _OfficerDashboardState extends State<OfficerDashboard> {
   int _currentIndex = 0;
+  final GlobalKey<CloudEvidenceScreenState> _allEvidenceKey = GlobalKey<CloudEvidenceScreenState>();
 
   void _onTabTapped(int index) {
     if (index == 1) {
       Navigator.pushNamed(context, AppRoutes.secureCamera);
       return;
     }
+    
+    if (index == 2 && _currentIndex != 2) {
+      _allEvidenceKey.currentState?.fetchEvidence();
+    }
+    
     setState(() {
       _currentIndex = index;
     });
@@ -38,7 +44,11 @@ class _OfficerDashboardState extends State<OfficerDashboard> {
     final List<Widget> pages = [
       _buildHomeSummary(user, evidenceService),
       const SizedBox.shrink(), // Capture placeholder
-      const CloudEvidenceScreen(title: 'All Evidence', showBottomNav: true),
+      CloudEvidenceScreen(
+        key: _allEvidenceKey,
+        title: 'All Evidence',
+        showBottomNav: true,
+      ),
       const UserManagementScreen(showBottomNav: true),
       const ProfileScreen(showBottomNav: true),
     ];
