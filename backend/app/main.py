@@ -6,8 +6,20 @@ from app.core.database import engine, Base, SessionLocal
 from app.models.role import Role
 from app.models.user import User
 from app.core.security import get_password_hash
+from alembic.config import Config
+from alembic import command
+import os
 
 def init_db():
+    # Automatically apply Alembic migrations
+    try:
+        alembic_ini_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), "alembic.ini")
+        if os.path.exists(alembic_ini_path):
+            alembic_cfg = Config(alembic_ini_path)
+            command.upgrade(alembic_cfg, "head")
+    except Exception as e:
+        print(f"Alembic migration failed, continuing with create_all: {e}")
+
     Base.metadata.create_all(bind=engine)
     db = SessionLocal()
     try:
