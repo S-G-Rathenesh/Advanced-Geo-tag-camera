@@ -30,6 +30,13 @@ class _EvidenceDetailsScreenState extends State<EvidenceDetailsScreen> {
   String? _verificationError;
   bool _hasLoaded = false;
 
+  String _formatCoordinates(double? lat, double? lon) {
+    if (lat == null || lon == null) return 'Location unavailable';
+    final latDir = lat >= 0 ? 'N' : 'S';
+    final lonDir = lon >= 0 ? 'E' : 'W';
+    return '${lat.abs().toStringAsFixed(6)}° $latDir, ${lon.abs().toStringAsFixed(6)}° $lonDir';
+  }
+
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
@@ -82,12 +89,12 @@ class _EvidenceDetailsScreenState extends State<EvidenceDetailsScreen> {
       // For a real app, this would use path_provider to save to Downloads
       // Since this is a test, we will write to a temp directory to simulate
       final dir = Directory.systemTemp;
-      final file = File('\${dir.path}/GeoEvidence_\${_record!.captureId}.jpg');
+      final file = File('${dir.path}/GeoEvidence_${_record!.captureId}.jpg');
       await file.writeAsBytes(_verifiedBytes!);
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-          content: Text('Saved to \${file.path}'),
+          content: Text('Saved to ${file.path}'),
           backgroundColor: const Color(0xFF10B981),
         ));
       }
@@ -136,10 +143,12 @@ class _EvidenceDetailsScreenState extends State<EvidenceDetailsScreen> {
 
     final record = _record!;
     final isVerified = _verifiedBytes != null;
+    final isFailed = _verificationError != null;
+    final isVerifying = !isVerified && !isFailed;
     final canDownload = isVerified && !_isDownloading;
 
     final displayHash = record.sha256Hash.length > 28
-        ? '\${record.sha256Hash.substring(0, 18)}...\${record.sha256Hash.substring(record.sha256Hash.length - 8)}'
+        ? '${record.sha256Hash.substring(0, 18)}...${record.sha256Hash.substring(record.sha256Hash.length - 8)}'
         : record.sha256Hash;
 
     return Scaffold(
@@ -158,8 +167,14 @@ class _EvidenceDetailsScreenState extends State<EvidenceDetailsScreen> {
               onPressed: canDownload ? _downloadImage : null,
               icon: _isDownloading
                   ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
-                  : const Icon(Icons.download_rounded, size: 18),
-              label: Text('Download', style: GoogleFonts.inter(fontWeight: FontWeight.w600)),
+                  : Icon(
+                      isFailed ? Icons.error_outline : Icons.download_rounded,
+                      size: 18,
+                    ),
+              label: Text(
+                isFailed ? 'Integrity Failed' : (isVerifying ? 'Verifying...' : 'Download'),
+                style: GoogleFonts.inter(fontWeight: FontWeight.w600)
+              ),
               style: ElevatedButton.styleFrom(
                 backgroundColor: canDownload ? const Color(0xFF38BDF8) : const Color(0xFF1E293B),
                 foregroundColor: canDownload ? const Color(0xFF0F172A) : const Color(0xFF94A3B8),
@@ -318,10 +333,9 @@ class _EvidenceDetailsScreenState extends State<EvidenceDetailsScreen> {
                         ),
                         const SizedBox(height: 12),
                         _buildDataRow('Address', record.address ?? 'Not recorded', canCopy: true),
-                        _buildDataRow('Coordinates', '\${record.latitude.toStringAsFixed(6)}, \${record.longitude.toStringAsFixed(6)}', canCopy: true),
-                        if (record.altitude != null)
-                          _buildDataRow('Altitude', '\${record.altitude!.toStringAsFixed(1)} m'),
-                        _buildDataRow('GPS Accuracy', '±\${record.accuracy.toStringAsFixed(1)} m'),
+                        _buildDataRow('Coordinates', _formatCoordinates(record.latitude, record.longitude), canCopy: true),
+                        _buildDataRow('Altitude', record.altitude != null ? '${record.altitude!.toStringAsFixed(1)} m' : 'Altitude unavailable'),
+                        _buildDataRow('GPS Accuracy', '±${record.accuracy.toStringAsFixed(1)} m'),
                       ],
                     ),
                   ),

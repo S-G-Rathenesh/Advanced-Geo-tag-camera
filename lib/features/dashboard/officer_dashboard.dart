@@ -244,76 +244,90 @@ class _OfficerDashboardState extends State<OfficerDashboard> {
 
                   const SizedBox(height: 18),
 
-                  // Action Buttons
-                  Row(
-                    children: [
-                      Expanded(
-                        child: SizedBox(
-                          height: 44,
-                          child: OutlinedButton(
-                            onPressed: () {
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (_) => const CloudEvidenceScreen(
-                                    title: 'My Evidence',
-                                    isMyEvidence: true,
-                                    showBottomNav: false,
-                                  ),
+                  // Responsive Action Buttons
+                  LayoutBuilder(
+                    builder: (context, constraints) {
+                      final myEvidenceBtn = SizedBox(
+                        height: 44,
+                        width: constraints.maxWidth < 300 ? double.infinity : null,
+                        child: OutlinedButton(
+                          onPressed: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (_) => const CloudEvidenceScreen(
+                                  title: 'My Evidence',
+                                  isMyEvidence: true,
+                                  showBottomNav: false,
                                 ),
-                              );
-                            },
-                            style: OutlinedButton.styleFrom(
-                              backgroundColor: const Color(0xFF0F1E36),
-                              side: const BorderSide(color: Color(0xFF1E3A5F)),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(10),
                               ),
-                              padding: const EdgeInsets.symmetric(horizontal: 4),
-                            ),
-                            child: Text(
-                              'My Evidence',
-                              style: GoogleFonts.inter(
-                                color: Colors.white,
-                                fontSize: 13,
-                                fontWeight: FontWeight.w700,
-                              ),
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              softWrap: false,
+                            );
+                          },
+                          style: OutlinedButton.styleFrom(
+                            backgroundColor: const Color(0xFF0F1E36),
+                            side: const BorderSide(color: Color(0xFF1E3A5F)),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(10),
                             ),
                           ),
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: SizedBox(
-                          height: 44,
-                          child: OutlinedButton(
-                            onPressed: () => _onTabTapped(2),
-                            style: OutlinedButton.styleFrom(
-                              backgroundColor: const Color(0xFF0F1E36),
-                              side: const BorderSide(color: Color(0xFF1E3A5F)),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(10),
-                              ),
-                              padding: const EdgeInsets.symmetric(horizontal: 4),
+                          child: Text(
+                            'My Evidence',
+                            style: GoogleFonts.inter(
+                              color: Colors.white,
+                              fontSize: 13,
+                              fontWeight: FontWeight.w700,
                             ),
-                            child: Text(
-                              'View All',
-                              style: GoogleFonts.inter(
-                                color: Colors.white,
-                                fontSize: 13,
-                                fontWeight: FontWeight.w700,
-                              ),
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              softWrap: false,
-                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            softWrap: false,
                           ),
                         ),
-                      ),
-                    ],
+                      );
+
+                      final allEvidenceBtn = SizedBox(
+                        height: 44,
+                        width: constraints.maxWidth < 300 ? double.infinity : null,
+                        child: OutlinedButton(
+                          onPressed: () => _onTabTapped(2),
+                          style: OutlinedButton.styleFrom(
+                            backgroundColor: const Color(0xFF0F1E36),
+                            side: const BorderSide(color: Color(0xFF1E3A5F)),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                          ),
+                          child: Text(
+                            'All Evidence',
+                            style: GoogleFonts.inter(
+                              color: Colors.white,
+                              fontSize: 13,
+                              fontWeight: FontWeight.w700,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            softWrap: false,
+                          ),
+                        ),
+                      );
+
+                      if (constraints.maxWidth < 300) {
+                        return Column(
+                          children: [
+                            myEvidenceBtn,
+                            const SizedBox(height: 12),
+                            allEvidenceBtn,
+                          ],
+                        );
+                      } else {
+                        return Row(
+                          children: [
+                            Expanded(child: myEvidenceBtn),
+                            const SizedBox(width: 12),
+                            Expanded(child: allEvidenceBtn),
+                          ],
+                        );
+                      }
+                    },
                   ),
                 ],
               ),

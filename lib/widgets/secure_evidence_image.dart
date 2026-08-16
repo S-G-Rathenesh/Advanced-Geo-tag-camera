@@ -81,6 +81,9 @@ class _SecureEvidenceImageState extends State<SecureEvidenceImage> {
           _isVerifying = false;
           _integrityError = null;
         });
+        if (_decryptedBytes != null) {
+          widget.onVerified?.call(_decryptedBytes!);
+        }
       }
       return;
     }
@@ -91,6 +94,9 @@ class _SecureEvidenceImageState extends State<SecureEvidenceImage> {
           _isVerifying = false;
           _integrityError = _errorCache[cacheKey];
         });
+        if (_errorCache[cacheKey] != null) {
+          widget.onError?.call(_errorCache[cacheKey]!);
+        }
       }
       return;
     }
