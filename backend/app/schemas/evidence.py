@@ -28,6 +28,7 @@ class EvidenceResponse(BaseModel):
     capture_timestamp: datetime
     upload_timestamp: datetime
     status: str
+    iv_base64: str | None = None
 
     model_config = ConfigDict(from_attributes=True)
 

@@ -7,7 +7,9 @@ import '../../models/evidence_record.dart';
 import '../../models/sync_status.dart';
 import '../../models/user_model.dart';
 import '../../services/api_service.dart';
+import '../../services/api_service.dart';
 import '../../services/auth_service.dart';
+import '../../widgets/secure_evidence_image.dart';
 
 /// All Evidence Screen matching the tactical mobile UI design.
 class CloudEvidenceScreen extends StatefulWidget {
@@ -378,17 +380,11 @@ class _CloudEvidenceScreenState extends State<CloudEvidenceScreen> {
                   height: 170,
                   width: double.infinity,
                   color: const Color(0xFF070E1B),
-                  child: evidence.imagePath.startsWith('http')
-                      ? Image.network(
-                          evidence.imagePath,
-                          fit: BoxFit.cover,
-                          errorBuilder: (context, error, stackTrace) => _buildPlaceholderImage(),
-                          loadingBuilder: (context, child, loadingProgress) {
-                            if (loadingProgress == null) return child;
-                            return const Center(child: CircularProgressIndicator(color: Color(0xFF38BDF8)));
-                          },
-                        )
-                      : _buildPlaceholderImage(),
+                  child: SecureEvidenceImage(
+                    record: evidence,
+                    fit: BoxFit.cover,
+                    errorPlaceholder: _buildPlaceholderImage(),
+                  ),
                 ),
 
                 // Top Left ID Badge

@@ -27,6 +27,7 @@ async def upload_evidence_endpoint(
     capture_timestamp: str = Form(...),
     altitude: float = Form(None),
     address: str = Form(None),
+    iv_base64: str = Form(None),
     file: UploadFile = File(...),
     db: Session = Depends(get_db),
     current_user: User = Depends(require_authenticated_user)
@@ -95,7 +96,8 @@ async def upload_evidence_endpoint(
         gps_accuracy=gps_accuracy,
         address=final_address,
         capture_timestamp=dt_capture,
-        status="VALID"
+        status="VALID",
+        iv_base64=iv_base64
     )
     db.add(evidence)
     db.commit()

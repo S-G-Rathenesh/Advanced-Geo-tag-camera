@@ -16,6 +16,7 @@ import '../../models/evidence_record.dart';
 import '../../services/auth_service.dart';
 import '../../services/camera_service.dart';
 import '../../services/evidence_service.dart';
+import '../../services/sync_service.dart';
 
 enum CaptureState {
   initializing,
@@ -240,6 +241,20 @@ class _SecureCameraScreenState extends State<SecureCameraScreen>
         _captureState = CaptureState.success;
         _statusMessage = 'Evidence secured locally';
       });
+
+      // Auto-sync: trigger background upload immediately
+      if (mounted) {
+        final syncService = context.read<SyncService>();
+        syncService.syncAll().then((_) {
+          if (mounted && _captureState == CaptureState.success) {
+            setState(() {
+              _statusMessage = 'Evidence secured & synced';
+            });
+          }
+        }).catchError((_) {
+          // Sync failed silently — will retry when connectivity returns
+        });
+      }
     } catch (e) {
       if (mounted) {
         setState(() {

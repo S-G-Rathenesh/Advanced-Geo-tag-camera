@@ -148,6 +148,7 @@ class EvidenceRecord {
       'address': address,
       'timestamp': timestamp.toIso8601String(),
       'sha256_hash': sha256Hash,
+      'iv_base64': ivBase64,
       'sync_status': syncStatus.name,
     };
   }
@@ -169,6 +170,7 @@ class EvidenceRecord {
       sha256Hash: json['sha256_hash'] as String,
       syncStatus: SyncStatusExtension.fromString(
           json['status'] as String? ?? 'synced'), // Assuming API response means it's synced
+      ivBase64: json['iv_base64'] as String?,
       createdAt: DateTime.tryParse(json['upload_timestamp'] as String? ?? '') ??
           DateTime.now(),
       updatedAt: DateTime.tryParse(json['upload_timestamp'] as String? ?? '') ??

@@ -16,6 +16,7 @@ class Evidence(Base):
     image_public_id = Column(String, nullable=False)
     
     sha256_hash = Column(String, nullable=False, index=True)
+    iv_base64 = Column(String, nullable=True)  # AES-GCM initialization vector (base64)
     
     latitude = Column(Float, nullable=False, index=True)
     longitude = Column(Float, nullable=False, index=True)

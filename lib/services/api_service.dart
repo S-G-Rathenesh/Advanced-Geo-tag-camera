@@ -144,6 +144,7 @@ class ApiService {
       timestamp: DateTime.parse(json['capture_timestamp']),
       sha256Hash: json['sha256_hash'],
       syncStatus: SyncStatus.synced,
+      ivBase64: json['iv_base64'],
       createdAt: DateTime.parse(json['capture_timestamp']),
       updatedAt: DateTime.parse(json['capture_timestamp']),
     );

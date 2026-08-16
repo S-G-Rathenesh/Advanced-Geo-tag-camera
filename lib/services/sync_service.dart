@@ -1,4 +1,5 @@
-
+import 'dart:async';
+import 'dart:convert';
 import 'dart:io';
 
 import 'package:connectivity_plus/connectivity_plus.dart';
@@ -17,6 +18,9 @@ import '../models/sync_status.dart';
 ///
 /// Executes multi-part binary uploads of AES-encrypted evidence to the FastAPI backend,
 /// verifying payload SHA-256 integrity and persisting metadata in Neon PostgreSQL.
+///
+/// Supports automatic sync: listens for connectivity changes and retries pending
+/// uploads whenever network becomes available.
 class SyncService extends ChangeNotifier {
   final EvidenceQueueDao _dao;
   final Connectivity _connectivity;
@@ -24,6 +28,7 @@ class SyncService extends ChangeNotifier {
   bool _isSyncing = false;
   String? _lastError;
   DateTime? _lastSyncTime;
+  StreamSubscription<List<ConnectivityResult>>? _connectivitySub;
 
   SyncService({
     EvidenceQueueDao? dao,
@@ -36,6 +41,29 @@ class SyncService extends ChangeNotifier {
   bool get isSyncing => _isSyncing;
   String? get lastError => _lastError;
   DateTime? get lastSyncTime => _lastSyncTime;
+
+  // ── Auto-Sync Lifecycle ───────────────────────────────────────────────
+
+  /// Start listening for connectivity changes and auto-sync pending evidence.
+  /// Call this once when the app starts (e.g. after login or from main).
+  void startAutoSync() {
+    _connectivitySub?.cancel();
+    _connectivitySub = _connectivity.onConnectivityChanged.listen((results) {
+      final hasNetwork = !results.contains(ConnectivityResult.none);
+      if (hasNetwork && !_isSyncing) {
+        debugPrint('[SYNC] Network restored — auto-syncing pending evidence...');
+        syncAll();
+      }
+    });
+    // Also attempt an immediate sync on start
+    syncAll();
+  }
+
+  @override
+  void dispose() {
+    _connectivitySub?.cancel();
+    super.dispose();
+  }
 
   // ── Connectivity ──────────────────────────────────────────────────────
 
@@ -152,6 +180,9 @@ class SyncService extends ChangeNotifier {
       if (record.address != null) {
         request.fields['address'] = record.address!;
       }
+      if (record.ivBase64 != null) {
+        request.fields['iv_base64'] = record.ivBase64!;
+      }
         
       request.files.add(
           http.MultipartFile.fromBytes(
@@ -172,11 +203,22 @@ class SyncService extends ChangeNotifier {
 
       // 3. Execute Upload
       final response = await request.send().timeout(AppConstants.apiTimeout);
+      final respStr = await response.stream.bytesToString();
 
       if (response.statusCode == 200 || response.statusCode == 201) {
-        return true;
+        // Validate that the server actually stored the IV
+        try {
+          final data = jsonDecode(respStr);
+          if (data['iv_base64'] == null || (data['iv_base64'] as String).isEmpty) {
+            debugPrint('FastAPI upload succeeded but iv_base64 is missing in response. Rejecting sync.');
+            return false;
+          }
+          return true;
+        } catch (e) {
+          debugPrint('Failed to parse FastAPI response: $e');
+          return false;
+        }
       } else {
-        final respStr = await response.stream.bytesToString();
         debugPrint('FastAPI upload failed: ${response.statusCode} - $respStr');
         return false;
       }
