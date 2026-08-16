@@ -244,31 +244,76 @@ class _OfficerDashboardState extends State<OfficerDashboard> {
 
                   const SizedBox(height: 18),
 
-                  // Single Action Button
-                  SizedBox(
-                    width: double.infinity,
-                    height: 44,
-                    child: OutlinedButton(
-                      onPressed: () => _onTabTapped(2),
-                      style: OutlinedButton.styleFrom(
-                        backgroundColor: const Color(0xFF0F1E36),
-                        side: const BorderSide(color: Color(0xFF1E3A5F)),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(10),
+                  // Action Buttons
+                  Row(
+                    children: [
+                      Expanded(
+                        child: SizedBox(
+                          height: 44,
+                          child: OutlinedButton(
+                            onPressed: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (_) => const CloudEvidenceScreen(
+                                    title: 'My Evidence',
+                                    isMyEvidence: true,
+                                    showBottomNav: false,
+                                  ),
+                                ),
+                              );
+                            },
+                            style: OutlinedButton.styleFrom(
+                              backgroundColor: const Color(0xFF0F1E36),
+                              side: const BorderSide(color: Color(0xFF1E3A5F)),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(10),
+                              ),
+                              padding: const EdgeInsets.symmetric(horizontal: 4),
+                            ),
+                            child: Text(
+                              'My Evidence',
+                              style: GoogleFonts.inter(
+                                color: Colors.white,
+                                fontSize: 13,
+                                fontWeight: FontWeight.w700,
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              softWrap: false,
+                            ),
+                          ),
                         ),
                       ),
-                      child: Text(
-                        'View All Evidence',
-                        style: GoogleFonts.inter(
-                          color: Colors.white,
-                          fontSize: 14,
-                          fontWeight: FontWeight.w700,
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: SizedBox(
+                          height: 44,
+                          child: OutlinedButton(
+                            onPressed: () => _onTabTapped(2),
+                            style: OutlinedButton.styleFrom(
+                              backgroundColor: const Color(0xFF0F1E36),
+                              side: const BorderSide(color: Color(0xFF1E3A5F)),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(10),
+                              ),
+                              padding: const EdgeInsets.symmetric(horizontal: 4),
+                            ),
+                            child: Text(
+                              'View All',
+                              style: GoogleFonts.inter(
+                                color: Colors.white,
+                                fontSize: 13,
+                                fontWeight: FontWeight.w700,
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              softWrap: false,
+                            ),
+                          ),
                         ),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        softWrap: false,
                       ),
-                    ),
+                    ],
                   ),
                 ],
               ),
