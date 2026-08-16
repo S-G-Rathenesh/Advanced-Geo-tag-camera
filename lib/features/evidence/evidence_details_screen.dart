@@ -6,6 +6,9 @@ import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
+import 'package:path_provider/path_provider.dart';
+import 'package:permission_handler/permission_handler.dart';
+import 'package:device_info_plus/device_info_plus.dart';
 
 import '../../core/constants/app_routes.dart';
 import '../../models/evidence_record.dart';
@@ -71,7 +74,7 @@ class _EvidenceDetailsScreenState extends State<EvidenceDetailsScreen> {
   }
 
   Future<void> _downloadImage() async {
-    if (_verifiedBytes == null) return;
+    if (_verifiedBytes == null || _isDownloading) return;
     
     final authService = context.read<AuthService>();
     if (authService.currentUser?.role != UserRole.officer) {
@@ -85,17 +88,43 @@ class _EvidenceDetailsScreenState extends State<EvidenceDetailsScreen> {
     setState(() => _isDownloading = true);
 
     try {
-      // Create GeoEvidence_<captureId>.jpg in a visible directory
-      // For a real app, this would use path_provider to save to Downloads
-      // Since this is a test, we will write to a temp directory to simulate
-      final dir = Directory.systemTemp;
-      final file = File('${dir.path}/GeoEvidence_${_record!.captureId}.jpg');
+      String savePath;
+      if (Platform.isAndroid) {
+        final deviceInfo = await DeviceInfoPlugin().androidInfo;
+        if (deviceInfo.version.sdkInt < 30) {
+          final status = await Permission.storage.request();
+          if (!status.isGranted) {
+            throw Exception('Storage permission denied');
+          }
+        }
+        
+        final extDir = await getExternalStorageDirectory();
+        if (extDir != null) {
+          final pathSegments = extDir.path.split('/');
+          final androidIndex = pathSegments.indexOf('Android');
+          if (androidIndex != -1) {
+            final basePath = pathSegments.sublist(0, androidIndex).join('/');
+            savePath = '$basePath/Download';
+          } else {
+            savePath = '/storage/emulated/0/Download';
+          }
+        } else {
+          savePath = '/storage/emulated/0/Download';
+        }
+      } else {
+        final dir = await getApplicationDocumentsDirectory();
+        savePath = dir.path;
+      }
+
+      final safeId = _record!.captureId.replaceAll(RegExp(r'[^a-zA-Z0-9-]'), '');
+      final file = File('$savePath/GeoEvidence_$safeId.jpg');
       await file.writeAsBytes(_verifiedBytes!);
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-          content: Text('Saved to ${file.path}'),
+          content: Text('Saved to Downloads/GeoEvidence_$safeId.jpg'),
           backgroundColor: const Color(0xFF10B981),
+          duration: const Duration(seconds: 4),
         ));
       }
     } catch (e) {
@@ -172,7 +201,9 @@ class _EvidenceDetailsScreenState extends State<EvidenceDetailsScreen> {
                       size: 18,
                     ),
               label: Text(
-                isFailed ? 'Integrity Failed' : (isVerifying ? 'Verifying...' : 'Download'),
+                _isDownloading
+                    ? 'Saving...'
+                    : (isFailed ? 'Integrity Failed' : (isVerifying ? 'Verifying...' : 'Download')),
                 style: GoogleFonts.inter(fontWeight: FontWeight.w600)
               ),
               style: ElevatedButton.styleFrom(
