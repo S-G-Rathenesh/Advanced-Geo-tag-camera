@@ -9,13 +9,12 @@ import 'package:intl/intl.dart';
 
 import '../models/evidence_record.dart';
 
-/// Service responsible for embedding the tactical GPS Map Camera watermark
-/// overlay directly onto evidence photos upon download by an Officer.
+/// High-fidelity service that renders a clean, large, high-contrast GPS Map Camera
+/// watermark banner overlay onto evidence photos when downloaded by an Officer.
 class GeoTagImageStampService {
   static final Map<String, ui.Image> _tileCache = {};
 
-  /// Stamps the provided image with the complete GPS Map Camera banner overlay,
-  /// including mini map tile, red pin, address, coordinates, and timestamp.
+  /// Stamps the image with an enlarged, ultra-neat GPS Map Camera watermark banner.
   static Future<Uint8List> stampEvidenceImage(
     Uint8List rawBytes,
     EvidenceRecord record,
@@ -33,7 +32,7 @@ class GeoTagImageStampService {
       resolvedAddress = await _reverseGeocode(record.latitude, record.longitude);
     }
 
-    // 3. Fetch Map Tile
+    // 3. Fetch Satellite / Map Tile
     final mapTile = await _fetchMapTile(record.latitude, record.longitude);
 
     // 4. Setup Canvas
@@ -43,35 +42,35 @@ class GeoTagImageStampService {
     // Draw original photographic evidence
     canvas.drawImage(originalImage, Offset.zero, Paint());
 
-    // Calculate dynamic scaling based on image width (standard reference: 1080p)
-    final baseScale = math.max(imgWidth / 1080.0, 0.65);
-    final bannerHeight = 250.0 * baseScale;
-    final padding = 16.0 * baseScale;
+    // Proportional scaling factor (optimized for large, sharp, readable text on all resolutions)
+    final baseScale = math.max(imgWidth / 960.0, 1.0);
+    final bannerHeight = 310.0 * baseScale;
+    final padding = 20.0 * baseScale;
     final mapSize = bannerHeight - (padding * 2);
 
-    // ── 5. DRAW BOTTOM OVERLAY BANNER ──────────────────────────────────────────
+    // ── 5. DRAW SOLID DARK BANNER WITH SUBTLE TOP BORDER ───────────────────────
     final bannerRect = Rect.fromLTWH(0, imgHeight - bannerHeight, imgWidth, bannerHeight);
-    final bannerPaint = Paint()..color = const Color(0xE6050B14);
+    final bannerPaint = Paint()..color = const Color(0xF2070D18);
     canvas.drawRect(bannerRect, bannerPaint);
 
-    // Top accent border
+    // Glowing cyan/blue top divider border
     final topBorderPaint = Paint()
-      ..color = const Color(0x3338BDF8)
-      ..strokeWidth = 1.5 * baseScale;
+      ..color = const Color(0x6638BDF8)
+      ..strokeWidth = 2.0 * baseScale;
     canvas.drawLine(
       Offset(0, imgHeight - bannerHeight),
       Offset(imgWidth, imgHeight - bannerHeight),
       topBorderPaint,
     );
 
-    // ── 6. DRAW MINI MAP TILE & PIN (LEFT BOX) ─────────────────────────────────
+    // ── 6. DRAW MINI SATELLITE / MAP TILE (LEFT BOX) ───────────────────────────
     final mapRect = Rect.fromLTWH(
       padding,
       imgHeight - bannerHeight + padding,
       mapSize,
       mapSize,
     );
-    final mapRRect = RRect.fromRectAndRadius(mapRect, Radius.circular(8 * baseScale));
+    final mapRRect = RRect.fromRectAndRadius(mapRect, Radius.circular(12 * baseScale));
 
     canvas.save();
     canvas.clipRRect(mapRRect);
@@ -81,71 +80,62 @@ class GeoTagImageStampService {
         mapTile,
         Rect.fromLTWH(0, 0, mapTile.width.toDouble(), mapTile.height.toDouble()),
         mapRect,
-        Paint(),
+        Paint()..filterQuality = FilterQuality.high,
       );
     } else {
       _drawTacticalMapFallback(canvas, mapRect, record.latitude, record.longitude, baseScale);
     }
 
-    // Draw Red Map Pin Marker at center of map
+    // Draw 3D Red Location Pin Marker at center of map
     final pinCenterX = mapRect.center.dx;
     final pinCenterY = mapRect.center.dy - (4 * baseScale);
     _drawMapPin(canvas, pinCenterX, pinCenterY, baseScale);
 
     // Draw "Google" logo watermark at bottom-left of map box
-    _drawText(
-      canvas,
-      'Google',
-      x: mapRect.left + (6 * baseScale),
-      y: mapRect.bottom - (16 * baseScale),
-      maxWidth: mapSize - (12 * baseScale),
-      fontSize: 11.5 * baseScale,
-      fontWeight: FontWeight.bold,
-      color: Colors.white,
-    );
+    _drawGoogleWatermark(canvas, mapRect.left + (8 * baseScale), mapRect.bottom - (20 * baseScale), baseScale);
 
     canvas.restore();
 
-    // Map border outline
+    // Map rounded border outline
     final mapBorderPaint = Paint()
-      ..color = const Color(0x66FFFFFF)
+      ..color = const Color(0x88FFFFFF)
       ..style = PaintingStyle.stroke
-      ..strokeWidth = 1.0 * baseScale;
+      ..strokeWidth = 1.5 * baseScale;
     canvas.drawRRect(mapRRect, mapBorderPaint);
 
     // ── 7. DRAW TOP-RIGHT "GPS Map Camera" BADGE ─────────────────────────────
-    final badgeHeight = 24.0 * baseScale;
-    final badgeWidth = 135.0 * baseScale;
+    final badgeHeight = 28.0 * baseScale;
+    final badgeWidth = 155.0 * baseScale;
     final badgeRect = Rect.fromLTWH(
       imgWidth - padding - badgeWidth,
-      imgHeight - bannerHeight + (padding * 0.7),
+      imgHeight - bannerHeight + (padding * 0.75),
       badgeWidth,
       badgeHeight,
     );
     _drawBadge(canvas, badgeRect, baseScale);
 
-    // ── 8. DRAW TEXT DATA (RIGHT SIDE) ────────────────────────────────────────
-    final textLeft = mapRect.right + (14 * baseScale);
+    // ── 8. DRAW STRUCTURED TEXT DATA (RIGHT SIDE) ─────────────────────────────
+    final textLeft = mapRect.right + (20 * baseScale);
     final textRight = imgWidth - padding;
     final textWidth = textRight - textLeft;
     var currentY = imgHeight - bannerHeight + (padding * 0.85);
 
-    // Line 1: Short Locality Title (e.g. Thalavapalayam, Tamil Nadu, India)
+    // Line 1: Bold Large Locality Title (e.g. Thalavapalayam, Tamil Nadu, India)
     final locationTitle = _extractShortLocation(resolvedAddress, record.latitude, record.longitude);
     _drawText(
       canvas,
       locationTitle,
       x: textLeft,
       y: currentY,
-      maxWidth: textWidth - badgeWidth - (8 * baseScale),
-      fontSize: 18.0 * baseScale,
-      fontWeight: FontWeight.bold,
+      maxWidth: textWidth - badgeWidth - (10 * baseScale),
+      fontSize: 22.0 * baseScale,
+      fontWeight: FontWeight.w700,
       color: Colors.white,
       maxLines: 1,
     );
-    currentY += 24.0 * baseScale;
+    currentY += 32.0 * baseScale;
 
-    // Line 2: Full Address / Plus Code
+    // Line 2: Detailed Full Street Address / Plus Code
     final fullAddress = resolvedAddress ?? locationTitle;
     _drawText(
       canvas,
@@ -153,14 +143,14 @@ class GeoTagImageStampService {
       x: textLeft,
       y: currentY,
       maxWidth: textWidth,
-      fontSize: 12.5 * baseScale,
+      fontSize: 14.5 * baseScale,
       fontWeight: FontWeight.w400,
-      color: const Color(0xFFE2E8F0),
+      color: const Color(0xFFF1F5F9),
       maxLines: 2,
     );
-    currentY += 34.0 * baseScale;
+    currentY += 40.0 * baseScale;
 
-    // Line 3: Latitude & Longitude Coordinates
+    // Line 3: High Precision Coordinates (Lat ... Long ...)
     final latStr = record.latitude.toStringAsFixed(6);
     final lonStr = record.longitude.toStringAsFixed(6);
     final coordText = 'Lat $latStr° Long $lonStr°';
@@ -170,14 +160,14 @@ class GeoTagImageStampService {
       x: textLeft,
       y: currentY,
       maxWidth: textWidth,
-      fontSize: 13.5 * baseScale,
-      fontWeight: FontWeight.w500,
+      fontSize: 16.0 * baseScale,
+      fontWeight: FontWeight.w600,
       color: Colors.white,
       maxLines: 1,
     );
-    currentY += 22.0 * baseScale;
+    currentY += 26.0 * baseScale;
 
-    // Line 4: Timestamp with Timezone Offset (e.g. 14/08/2026 02:17 PM GMT +05:30)
+    // Line 4: Formatted Date, Time & GMT Offset (e.g. 14/08/2026 02:17 PM GMT +05:30)
     final localTime = record.timestamp.toLocal();
     final datePart = DateFormat('dd/MM/yyyy').format(localTime);
     final timePart = DateFormat('hh:mm a').format(localTime);
@@ -189,8 +179,8 @@ class GeoTagImageStampService {
       x: textLeft,
       y: currentY,
       maxWidth: textWidth,
-      fontSize: 13.5 * baseScale,
-      fontWeight: FontWeight.w500,
+      fontSize: 16.0 * baseScale,
+      fontWeight: FontWeight.w600,
       color: Colors.white,
       maxLines: 1,
     );
@@ -223,6 +213,7 @@ class GeoTagImageStampService {
         fontWeight: fontWeight,
         maxLines: maxLines,
         ellipsis: '...',
+        height: 1.25,
       ),
     )
       ..pushStyle(ui.TextStyle(
@@ -238,29 +229,56 @@ class GeoTagImageStampService {
     canvas.drawParagraph(paragraph, ui.Offset(x, y));
   }
 
+  static void _drawGoogleWatermark(ui.Canvas canvas, double x, double y, double scale) {
+    // Subtle shadow for legibility over any map tile
+    _drawText(
+      canvas,
+      'Google',
+      x: x + (1 * scale),
+      y: y + (1 * scale),
+      maxWidth: 100 * scale,
+      fontSize: 13.0 * scale,
+      fontWeight: FontWeight.bold,
+      color: const Color(0xAA000000),
+    );
+    _drawText(
+      canvas,
+      'Google',
+      x: x,
+      y: y,
+      maxWidth: 100 * scale,
+      fontSize: 13.0 * scale,
+      fontWeight: FontWeight.bold,
+      color: Colors.white,
+    );
+  }
+
   static void _drawMapPin(ui.Canvas canvas, double cx, double cy, double scale) {
-    final pinRadius = 8.5 * scale;
+    final pinRadius = 10.0 * scale;
     final pinPaint = Paint()
       ..color = const Color(0xFFEF4444)
       ..style = PaintingStyle.fill;
 
     // Drop shadow
-    canvas.drawCircle(
-      Offset(cx, cy + (13 * scale)),
-      3.5 * scale,
-      Paint()..color = const Color(0x88000000),
+    canvas.drawOval(
+      Rect.fromCenter(
+        center: Offset(cx, cy + (15.5 * scale)),
+        width: 10 * scale,
+        height: 5 * scale,
+      ),
+      Paint()..color = const Color(0x99000000),
     );
 
     // Teardrop pin body
     final path = Path();
-    path.moveTo(cx, cy + (13 * scale));
-    path.quadraticBezierTo(cx - (8 * scale), cy + (4 * scale), cx - (8 * scale), cy - (2 * scale));
+    path.moveTo(cx, cy + (15.5 * scale));
+    path.quadraticBezierTo(cx - (9.5 * scale), cy + (5 * scale), cx - (9.5 * scale), cy - (2 * scale));
     path.arcToPoint(
-      Offset(cx + (8 * scale), cy - (2 * scale)),
+      Offset(cx + (9.5 * scale), cy - (2 * scale)),
       radius: Radius.circular(pinRadius),
       clockwise: true,
     );
-    path.quadraticBezierTo(cx + (8 * scale), cy + (4 * scale), cx, cy + (13 * scale));
+    path.quadraticBezierTo(cx + (9.5 * scale), cy + (5 * scale), cx, cy + (15.5 * scale));
     path.close();
 
     canvas.drawPath(path, pinPaint);
@@ -268,25 +286,25 @@ class GeoTagImageStampService {
     // Inner white dot
     canvas.drawCircle(
       Offset(cx, cy - (2 * scale)),
-      3.2 * scale,
+      3.8 * scale,
       Paint()..color = Colors.white,
     );
   }
 
   static void _drawBadge(ui.Canvas canvas, Rect badgeRect, double scale) {
-    final badgeRRect = RRect.fromRectAndRadius(badgeRect, Radius.circular(4 * scale));
-    canvas.drawRRect(badgeRRect, Paint()..color = const Color(0xCC111827));
+    final badgeRRect = RRect.fromRectAndRadius(badgeRect, Radius.circular(6 * scale));
+    canvas.drawRRect(badgeRRect, Paint()..color = const Color(0xE60F172A));
     canvas.drawRRect(
       badgeRRect,
       Paint()
-        ..color = const Color(0x4438BDF8)
+        ..color = const Color(0x6638BDF8)
         ..style = PaintingStyle.stroke
-        ..strokeWidth = 1.0 * scale,
+        ..strokeWidth = 1.2 * scale,
     );
 
-    final iconSize = 14.0 * scale;
+    final iconSize = 16.0 * scale;
     final iconRect = Rect.fromLTWH(
-      badgeRect.left + (5 * scale),
+      badgeRect.left + (6 * scale),
       badgeRect.top + (badgeRect.height - iconSize) / 2,
       iconSize,
       iconSize,
@@ -294,14 +312,14 @@ class GeoTagImageStampService {
 
     // Cyan camera icon box
     canvas.drawRRect(
-      RRect.fromRectAndRadius(iconRect, Radius.circular(2.5 * scale)),
+      RRect.fromRectAndRadius(iconRect, Radius.circular(3.0 * scale)),
       Paint()..color = const Color(0xFF38BDF8),
     );
 
     // Dark lens circle
     canvas.drawCircle(
       iconRect.center,
-      2.5 * scale,
+      3.0 * scale,
       Paint()..color = const Color(0xFF0F172A),
     );
 
@@ -309,10 +327,10 @@ class GeoTagImageStampService {
     _drawText(
       canvas,
       'GPS Map Camera',
-      x: iconRect.right + (5 * scale),
-      y: badgeRect.top + (4.5 * scale),
-      maxWidth: badgeRect.width - iconSize - (10 * scale),
-      fontSize: 10.0 * scale,
+      x: iconRect.right + (6 * scale),
+      y: badgeRect.top + (5.0 * scale),
+      maxWidth: badgeRect.width - iconSize - (12 * scale),
+      fontSize: 11.5 * scale,
       fontWeight: FontWeight.bold,
       color: Colors.white,
     );
@@ -325,16 +343,16 @@ class GeoTagImageStampService {
     double lon,
     double scale,
   ) {
-    // 1. Satellite dark terrain base
+    // Satellite dark terrain base
     canvas.drawRect(mapRect, Paint()..color = const Color(0xFF1E293B));
 
-    // 2. Terrain patches
+    // Terrain patches
     canvas.drawOval(
       Rect.fromLTWH(
         mapRect.left + (mapRect.width * 0.1),
         mapRect.top + (mapRect.height * 0.2),
-        mapRect.width * 0.55,
-        mapRect.height * 0.45,
+        mapRect.width * 0.6,
+        mapRect.height * 0.5,
       ),
       Paint()..color = const Color(0xFF334155),
     );
@@ -348,7 +366,7 @@ class GeoTagImageStampService {
       Paint()..color = const Color(0xFF263342),
     );
 
-    // 3. Grid lines
+    // Grid lines
     final gridPaint = Paint()
       ..color = const Color(0x3338BDF8)
       ..strokeWidth = 1.0 * scale;
@@ -360,13 +378,13 @@ class GeoTagImageStampService {
       canvas.drawLine(Offset(mapRect.left, y), Offset(mapRect.right, y), gridPaint);
     }
 
-    // 4. Radar concentric rings
+    // Radar concentric rings
     final radarPaint = Paint()
       ..color = const Color(0x4438BDF8)
       ..style = PaintingStyle.stroke
-      ..strokeWidth = 1.0 * scale;
-    canvas.drawCircle(mapRect.center, 18 * scale, radarPaint);
-    canvas.drawCircle(mapRect.center, 38 * scale, radarPaint);
+      ..strokeWidth = 1.2 * scale;
+    canvas.drawCircle(mapRect.center, 22 * scale, radarPaint);
+    canvas.drawCircle(mapRect.center, 44 * scale, radarPaint);
   }
 
   static Future<ui.Image?> _fetchMapTile(double lat, double lon) async {
@@ -381,20 +399,33 @@ class GeoTagImageStampService {
         return _tileCache[cacheKey];
       }
 
-      final url = Uri.parse('https://tile.openstreetmap.org/$zoom/$x/$y.png');
-      final response = await http.get(
-        url,
-        headers: {'User-Agent': 'Capturovert-GeoEvidence-App/1.0 (Mobile Secure Camera)'},
-      ).timeout(const Duration(seconds: 4));
+      // 1. Primary: Satellite Imagery (Esri World Imagery)
+      try {
+        final satelliteUrl = Uri.parse('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/$zoom/$y/$x');
+        final satResponse = await http.get(satelliteUrl).timeout(const Duration(seconds: 3));
+        if (satResponse.statusCode == 200 && satResponse.bodyBytes.isNotEmpty) {
+          final codec = await ui.instantiateImageCodec(satResponse.bodyBytes);
+          final frame = await codec.getNextFrame();
+          _tileCache[cacheKey] = frame.image;
+          return frame.image;
+        }
+      } catch (_) {}
 
-      if (response.statusCode == 200) {
-        final codec = await ui.instantiateImageCodec(response.bodyBytes);
+      // 2. Secondary Fallback: OpenStreetMap Tile
+      final osmUrl = Uri.parse('https://tile.openstreetmap.org/$zoom/$x/$y.png');
+      final osmResponse = await http.get(
+        osmUrl,
+        headers: {'User-Agent': 'Capturovert-GeoEvidence-App/1.0 (Mobile Secure Camera)'},
+      ).timeout(const Duration(seconds: 3));
+
+      if (osmResponse.statusCode == 200 && osmResponse.bodyBytes.isNotEmpty) {
+        final codec = await ui.instantiateImageCodec(osmResponse.bodyBytes);
         final frame = await codec.getNextFrame();
         _tileCache[cacheKey] = frame.image;
         return frame.image;
       }
     } catch (e) {
-      debugPrint('Map tile fetch skipped or offline: $e');
+      debugPrint('Map tile fetch fallback to tactical radar: $e');
     }
     return null;
   }
