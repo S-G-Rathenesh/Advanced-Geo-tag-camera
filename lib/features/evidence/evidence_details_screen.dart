@@ -216,7 +216,7 @@ class _EvidenceDetailsScreenState extends State<EvidenceDetailsScreen> {
           icon: const Icon(Icons.arrow_back, color: Colors.white),
           onPressed: () => Navigator.pop(context),
         ),
-        actions: context.read<AuthService>().currentUser?.role == UserRole.officer ? [
+        actions: context.watch<AuthService>().currentUser?.role == UserRole.officer ? [
           Padding(
             padding: const EdgeInsets.only(right: 16.0),
             child: ElevatedButton.icon(
