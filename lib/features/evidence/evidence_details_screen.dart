@@ -15,6 +15,7 @@ import '../../models/evidence_record.dart';
 import '../../models/user_model.dart';
 import '../../services/api_service.dart';
 import '../../services/auth_service.dart';
+import '../../services/geo_tag_image_stamp_service.dart';
 import '../../widgets/secure_evidence_image.dart';
 import '../../widgets/evidence_view_protection_overlay.dart';
 
@@ -142,13 +143,19 @@ class _EvidenceDetailsScreenState extends State<EvidenceDetailsScreen> {
         savePath = dir.path;
       }
 
+      // Stamp the image with the official GPS Map Camera watermark banner
+      final stampedBytes = await GeoTagImageStampService.stampEvidenceImage(
+        _verifiedBytes!,
+        _record!,
+      );
+
       final safeId = _record!.captureId.replaceAll(RegExp(r'[^a-zA-Z0-9-]'), '');
       final file = File('$savePath/GeoEvidence_$safeId.jpg');
-      await file.writeAsBytes(_verifiedBytes!);
+      await file.writeAsBytes(stampedBytes);
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-          content: Text('Saved to Downloads/GeoEvidence_$safeId.jpg'),
+          content: Text('Saved with Geo-tag to Downloads/GeoEvidence_$safeId.jpg'),
           backgroundColor: const Color(0xFF10B981),
           duration: const Duration(seconds: 4),
         ));
