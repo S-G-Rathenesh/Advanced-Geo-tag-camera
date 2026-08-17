@@ -62,7 +62,7 @@ def init_db():
                 email="demo.supervisor@gmail.com",
                 google_subject_id="demo_google_sup_123",
                 name="Demo Supervisor",
-                department="Management",
+                department="Field Ops",
                 role_id=roles["SUPERVISOR"].id,
                 is_active=True
             )
@@ -72,7 +72,7 @@ def init_db():
             supervisor.password_hash = get_password_hash("password123")
             supervisor.google_subject_id = "demo_google_sup_123"
             supervisor.name = "Demo Supervisor"
-            supervisor.department = "Management"
+            supervisor.department = "Field Ops"
             supervisor.role_id = roles["SUPERVISOR"].id
             supervisor.is_active = True
             

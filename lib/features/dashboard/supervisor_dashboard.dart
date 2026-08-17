@@ -19,7 +19,7 @@ class SupervisorDashboard extends StatefulWidget {
 
 class _SupervisorDashboardState extends State<SupervisorDashboard> {
   int _currentIndex = 0;
-  final GlobalKey<CloudEvidenceScreenState> _myEvidenceKey = GlobalKey<CloudEvidenceScreenState>();
+  final GlobalKey<CloudEvidenceScreenState> _allEvidenceKey = GlobalKey<CloudEvidenceScreenState>();
 
   void _onTabTapped(int index) {
     if (index == 1) {
@@ -28,8 +28,8 @@ class _SupervisorDashboardState extends State<SupervisorDashboard> {
     }
     
     if (index == 2 && _currentIndex != 2) {
-      debugPrint('[evidence_navigation] role=supervisor destination=my_evidence isMyEvidence=true');
-      _myEvidenceKey.currentState?.fetchEvidence();
+      debugPrint('[evidence_navigation] role=supervisor destination=all_evidence isMyEvidence=false');
+      _allEvidenceKey.currentState?.fetchEvidence();
     } else if (index == 3 && _currentIndex != 3) {
       debugPrint('[evidence_navigation] role=supervisor destination=all_evidence isMyEvidence=false');
     }
@@ -49,9 +49,9 @@ class _SupervisorDashboardState extends State<SupervisorDashboard> {
       _buildHomeSummary(user, evidenceService),
       const SizedBox.shrink(), // Capture placeholder
       CloudEvidenceScreen(
-        key: _myEvidenceKey,
-        title: 'My Evidence',
-        isMyEvidence: true,
+        key: _allEvidenceKey,
+        title: 'All Evidence',
+        isMyEvidence: false,
         showBottomNav: true,
       ),
       const UserManagementScreen(showBottomNav: true),
@@ -305,7 +305,19 @@ class _SupervisorDashboardState extends State<SupervisorDashboard> {
                         child: SizedBox(
                           height: 42,
                           child: OutlinedButton(
-                            onPressed: () => _onTabTapped(2),
+                            onPressed: () {
+                              debugPrint('[evidence_navigation] role=supervisor destination=my_evidence isMyEvidence=true');
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (_) => const CloudEvidenceScreen(
+                                    title: 'My Evidence',
+                                    isMyEvidence: true,
+                                    showBottomNav: false,
+                                  ),
+                                ),
+                              );
+                            },
                             style: OutlinedButton.styleFrom(
                               backgroundColor: const Color(0xFF0F1E36),
                               side: const BorderSide(color: Color(0xFF1E3A5F)),
@@ -389,7 +401,19 @@ class _SupervisorDashboardState extends State<SupervisorDashboard> {
                 const SizedBox(width: 12),
                 Expanded(
                   child: GestureDetector(
-                    onTap: () => _onTabTapped(2),
+                    onTap: () {
+                      debugPrint('[evidence_navigation] role=supervisor destination=my_evidence isMyEvidence=true');
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => const CloudEvidenceScreen(
+                            title: 'My Evidence',
+                            isMyEvidence: true,
+                            showBottomNav: false,
+                          ),
+                        ),
+                      );
+                    },
                     child: Container(
                       padding: const EdgeInsets.all(14),
                       decoration: BoxDecoration(

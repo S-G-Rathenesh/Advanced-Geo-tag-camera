@@ -128,8 +128,9 @@ class CloudEvidenceScreenState extends State<CloudEvidenceScreen> {
                 userRoles[r.userId] = currentUser?.roleLabel ?? 'USER';
               }
             } else {
-              // Only merge if it belongs to current user OR user is supervisor/officer
-              if (belongsToUser || currentUser?.role != UserRole.user) {
+              bool isAuthorizedViewer = currentUser?.role == UserRole.supervisor || currentUser?.role == UserRole.officer;
+              
+              if (belongsToUser || isAuthorizedViewer) {
                 mergedMap[r.captureId] = r;
                 userNames[r.userId] = belongsToUser ? (currentUser?.name ?? currentUser?.email ?? r.userId) : r.userId;
                 userRoles[r.userId] = belongsToUser ? (currentUser?.roleLabel ?? 'USER') : 'USER';

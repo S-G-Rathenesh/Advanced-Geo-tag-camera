@@ -142,6 +142,25 @@ class _SecureCameraScreenState extends State<SecureCameraScreen>
         _errorMessage = 'GPS Error: $e';
       });
     });
+
+    // Kick-start location with last known position for immediate feedback
+    Geolocator.getLastKnownPosition().then((pos) {
+      if (pos != null && _currentPosition == null && mounted) {
+        _currentPosition = pos;
+        _checkReadyState();
+      }
+    }).catchError((_) {});
+
+    // Force a one-time rapid location request to wake up the GPS chip faster
+    Geolocator.getCurrentPosition(
+      desiredAccuracy: LocationAccuracy.high,
+      timeLimit: const Duration(seconds: 5),
+    ).then((pos) {
+      if (_currentPosition == null && mounted) {
+        _currentPosition = pos;
+        _checkReadyState();
+      }
+    }).catchError((_) {});
   }
 
   void _checkReadyState() {

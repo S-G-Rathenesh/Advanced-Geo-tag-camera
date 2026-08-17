@@ -28,6 +28,7 @@ class _UserDashboardState extends State<UserDashboard> {
     }
 
     if (index == 2 && _currentIndex != 2) {
+      debugPrint('[evidence_navigation] role=user destination=my_evidence isMyEvidence=true');
       // Trigger a fresh API fetch when navigating to My Evidence
       _myEvidenceKey.currentState?.fetchEvidence();
     }
@@ -319,7 +320,19 @@ class _UserDashboardState extends State<UserDashboard> {
                         height: 42,
                         width: isNarrow ? double.infinity : null,
                         child: OutlinedButton(
-                          onPressed: () => _onTabTapped(2),
+                          onPressed: () {
+                            debugPrint('[evidence_navigation] role=user destination=my_evidence isMyEvidence=true');
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (_) => const CloudEvidenceScreen(
+                                  title: 'My Evidence',
+                                  isMyEvidence: true,
+                                  showBottomNav: false,
+                                ),
+                              ),
+                            );
+                          },
                           style: OutlinedButton.styleFrom(
                             backgroundColor: const Color(0xFF0F1E36),
                             side: const BorderSide(color: Color(0xFF1E3A5F)),
@@ -385,7 +398,19 @@ class _UserDashboardState extends State<UserDashboard> {
               children: [
                 Expanded(
                   child: GestureDetector(
-                    onTap: () => _onTabTapped(2),
+                    onTap: () {
+                      debugPrint('[evidence_navigation] role=user destination=my_evidence isMyEvidence=true');
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => const CloudEvidenceScreen(
+                            title: 'My Evidence',
+                            isMyEvidence: true,
+                            showBottomNav: false,
+                          ),
+                        ),
+                      );
+                    },
                     child: Container(
                       padding: const EdgeInsets.all(14),
                       decoration: BoxDecoration(

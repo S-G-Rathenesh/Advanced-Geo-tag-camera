@@ -73,8 +73,11 @@ class _EvidenceViewProtectionOverlayState extends State<EvidenceViewProtectionOv
             child: Container(
               color: const Color(0xF2090D16),
               padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
+              child: Center(
+                child: SingleChildScrollView(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    mainAxisSize: MainAxisSize.min,
                 children: [
                   ScaleTransition(
                     scale: _pulseAnimation,
@@ -154,10 +157,12 @@ class _EvidenceViewProtectionOverlayState extends State<EvidenceViewProtectionOv
                       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                     ),
                   ),
-                ],
+                  ],
+                ),
               ),
             ),
           ),
+        ),
 
         // 🛡️ Active Monitoring Indicator Pill
         if (!isShielded && (_state == ProtectionState.monitoring || _state == ProtectionState.suspicious))

@@ -128,9 +128,12 @@ def get_all_evidence(
     current_user: User = Depends(require_role(["OFFICER", "SUPERVISOR"]))
 ):
     query = db.query(Evidence)
-    if current_user.role.name == "SUPERVISOR":
-        query = query.join(User, Evidence.user_id == User.id).filter(User.department == current_user.department)
-    return query.order_by(Evidence.capture_timestamp.desc()).all()
+    
+    print(f"[evidence_authorization]\nrole={current_user.role.name.lower()}\nendpoint=/evidence\nscope=all")
+    results = query.order_by(Evidence.capture_timestamp.desc()).all()
+    print(f"[evidence_query]\nrole={current_user.role.name.lower()}\nuser_id={current_user.id}\nreturned_count={len(results)}")
+    
+    return results
 
 @router.get("/my")
 def get_my_evidence(
@@ -138,7 +141,9 @@ def get_my_evidence(
     current_user: User = Depends(require_authenticated_user)
 ):
     try:
+        print(f"[evidence_authorization]\nrole={current_user.role.name.lower()}\nendpoint=/evidence/my\nscope=own")
         results = db.query(Evidence).filter(Evidence.user_id == current_user.id).order_by(Evidence.capture_timestamp.desc()).all()
+        print(f"[evidence_query]\nrole={current_user.role.name.lower()}\nuser_id={current_user.id}\nreturned_count={len(results)}")
         valid_results = []
         for r in results:
             valid_results.append(EvidenceResponse.model_validate(r).model_dump())
@@ -161,12 +166,6 @@ def get_evidence(
     if current_user.role.name == "USER" and evidence.user_id != current_user.id:
         log_audit_event(db, action="UNAUTHORIZED_EVIDENCE_ACCESS_ATTEMPT", user_id=current_user.id, evidence_id=evidence.id)
         raise HTTPException(status_code=403, detail="Not authorized to view this evidence")
-        
-    if current_user.role.name == "SUPERVISOR":
-        owner = db.query(User).filter(User.id == evidence.user_id).first()
-        if owner and owner.department != current_user.department:
-            log_audit_event(db, action="UNAUTHORIZED_EVIDENCE_ACCESS_ATTEMPT", user_id=current_user.id, evidence_id=evidence.id)
-            raise HTTPException(status_code=403, detail="Not authorized to view evidence outside your department")
         
     action_type = f"{current_user.role.name}_EVIDENCE_ACCESS"
     log_audit_event(db, action=action_type, user_id=current_user.id, evidence_id=evidence.id)
