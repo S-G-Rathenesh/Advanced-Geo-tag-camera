@@ -120,6 +120,15 @@ class EvidenceService extends ChangeNotifier {
     // Insert into offline queue
     await _dao.insert(record);
 
+    debugPrint('\\n[sqlite]');
+    debugPrint('capture_id=${record.captureId}');
+    debugPrint('timestamp_utc=${record.timestamp.toIso8601String()}');
+    debugPrint('latitude=${record.latitude}');
+    debugPrint('longitude=${record.longitude}');
+    debugPrint('sha256=${record.sha256Hash}');
+    debugPrint('sync_status=${record.syncStatus.name}');
+    debugPrint('------\\n');
+
     // Refresh list
     await loadEvidence();
 

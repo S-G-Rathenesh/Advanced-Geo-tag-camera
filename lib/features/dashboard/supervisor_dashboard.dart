@@ -28,7 +28,10 @@ class _SupervisorDashboardState extends State<SupervisorDashboard> {
     }
     
     if (index == 2 && _currentIndex != 2) {
+      debugPrint('[evidence_navigation] role=supervisor destination=my_evidence isMyEvidence=true');
       _myEvidenceKey.currentState?.fetchEvidence();
+    } else if (index == 3 && _currentIndex != 3) {
+      debugPrint('[evidence_navigation] role=supervisor destination=all_evidence isMyEvidence=false');
     }
     
     setState(() {
@@ -279,6 +282,7 @@ class _SupervisorDashboardState extends State<SupervisorDashboard> {
                               backgroundColor: const Color(0xFF2563EB),
                               foregroundColor: Colors.white,
                               elevation: 0,
+                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 0),
                               shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(10),
                               ),
@@ -289,6 +293,9 @@ class _SupervisorDashboardState extends State<SupervisorDashboard> {
                                 fontSize: 13.5,
                                 fontWeight: FontWeight.w700,
                               ),
+                              textAlign: TextAlign.center,
+                              overflow: TextOverflow.ellipsis,
+                              maxLines: 1,
                             ),
                           ),
                         ),
@@ -302,6 +309,7 @@ class _SupervisorDashboardState extends State<SupervisorDashboard> {
                             style: OutlinedButton.styleFrom(
                               backgroundColor: const Color(0xFF0F1E36),
                               side: const BorderSide(color: Color(0xFF1E3A5F)),
+                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 0),
                               shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(10),
                               ),
@@ -313,6 +321,9 @@ class _SupervisorDashboardState extends State<SupervisorDashboard> {
                                 fontSize: 13,
                                 fontWeight: FontWeight.w700,
                               ),
+                              textAlign: TextAlign.center,
+                              overflow: TextOverflow.ellipsis,
+                              maxLines: 1,
                             ),
                           ),
                         ),
@@ -413,38 +424,7 @@ class _SupervisorDashboardState extends State<SupervisorDashboard> {
               ],
             ),
 
-            const SizedBox(height: 22),
 
-            // Section: Security Status Card
-            Container(
-              padding: const EdgeInsets.all(18),
-              decoration: BoxDecoration(
-                color: const Color(0xFF0B1322),
-                borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: const Color(0xFF1E293B)),
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'Security Status',
-                    style: GoogleFonts.inter(
-                      color: Colors.white,
-                      fontSize: 15,
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ),
-                  const SizedBox(height: 14),
-                  _buildSecurityRow('Encryption Active', 'Active'),
-                  const Divider(color: Color(0xFF1E293B), height: 20),
-                  _buildSecurityRow('Integrity Monitoring', 'Active'),
-                  const Divider(color: Color(0xFF1E293B), height: 20),
-                  _buildSecurityRow('Cloud Connected', 'Active'),
-                  const Divider(color: Color(0xFF1E293B), height: 20),
-                  _buildSecurityRow('Database Connected', 'Active'),
-                ],
-              ),
-            ),
 
             const SizedBox(height: 22),
 
@@ -530,40 +510,4 @@ class _SupervisorDashboardState extends State<SupervisorDashboard> {
     );
   }
 
-  Widget _buildSecurityRow(String label, String status) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: [
-        Text(
-          label,
-          style: GoogleFonts.inter(
-            color: Colors.white,
-            fontSize: 13.5,
-            fontWeight: FontWeight.w500,
-          ),
-        ),
-        Row(
-          children: [
-            Container(
-              width: 6,
-              height: 6,
-              decoration: const BoxDecoration(
-                shape: BoxShape.circle,
-                color: Color(0xFF10B981),
-              ),
-            ),
-            const SizedBox(width: 6),
-            Text(
-              status,
-              style: GoogleFonts.inter(
-                color: const Color(0xFF10B981),
-                fontSize: 12,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-          ],
-        ),
-      ],
-    );
-  }
 }

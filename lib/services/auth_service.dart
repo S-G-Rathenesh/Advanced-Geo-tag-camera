@@ -47,6 +47,7 @@ class AuthService extends ChangeNotifier {
         final userJson = data['user'] as Map<String, dynamic>;
 
         await _secureStorage.saveToken(token);
+        await _secureStorage.saveUserJson(jsonEncode(userJson));
         _currentUser = UserModel.fromJson(userJson);
         
         debugPrint('[AUTH] Officer login success: ${_currentUser?.roleLabel}');
@@ -88,6 +89,7 @@ class AuthService extends ChangeNotifier {
         final userJson = data['user'] as Map<String, dynamic>;
 
         await _secureStorage.saveToken(token);
+        await _secureStorage.saveUserJson(jsonEncode(userJson));
         _currentUser = UserModel.fromJson(userJson);
         
         final jwtRole = _decodeJwtRole(token);
@@ -164,6 +166,7 @@ class AuthService extends ChangeNotifier {
         final userJson = data['user'] as Map<String, dynamic>;
 
         await _secureStorage.saveToken(token);
+        await _secureStorage.saveUserJson(jsonEncode(userJson));
         _currentUser = UserModel.fromJson(userJson);
         
         debugPrint('[AUTH] Google login success: ${_currentUser?.roleLabel}');
@@ -186,7 +189,7 @@ class AuthService extends ChangeNotifier {
     }
   }
 
-  /// Attempt to restore session from stored JWT by calling /auth/me.
+  /// Attempt to restore session from stored JWT by calling /auth/me or loading local user JSON.
   Future<bool> tryAutoLogin() async {
     final hasSession = await _secureStorage.hasValidSession();
     if (!hasSession) return false;
@@ -195,6 +198,15 @@ class AuthService extends ChangeNotifier {
       final token = await _secureStorage.getToken();
       if (token == null) return false;
 
+      // First try to load the local user data so the app can start instantly
+      final localUserJsonStr = await _secureStorage.getUserJson();
+      if (localUserJsonStr != null) {
+        final userMap = jsonDecode(localUserJsonStr) as Map<String, dynamic>;
+        _currentUser = UserModel.fromJson(userMap);
+        notifyListeners();
+      }
+
+      // Then ping the server to verify the token is still valid
       final url = Uri.parse('${AppConstants.apiBaseUrl}/auth/me');
       final response = await http.get(
         url,
@@ -206,21 +218,27 @@ class AuthService extends ChangeNotifier {
 
       if (response.statusCode == 200) {
         final userJson = jsonDecode(response.body) as Map<String, dynamic>;
+        await _secureStorage.saveUserJson(jsonEncode(userJson));
         _currentUser = UserModel.fromJson(userJson);
-        
-        final jwtRole = _decodeJwtRole(token);
-        debugPrint('[AUTH] JWT Embedded Role: $jwtRole');
-        debugPrint('[AUTH] Auto-login restored: ${_currentUser?.roleLabel}');
         notifyListeners();
         return true;
-      } else {
-        debugPrint('[AUTH] Auto-login failed: ${response.statusCode}');
+      } else if (response.statusCode == 401 || response.statusCode == 403) {
+        debugPrint('[AUTH] Auto-login failed (unauthorized): ${response.statusCode}');
         await logout();
+        return false;
+      } else {
+        // Server error (500 etc), but token is not explicitly rejected.
+        // Fall back to local user if available.
+        debugPrint('[AUTH] Auto-login warning: Server returned ${response.statusCode}');
+        if (_currentUser != null) return true;
         return false;
       }
     } catch (e) {
-      debugPrint('[AUTH] Auto-login error: $e');
-      await logout();
+      // Network error (offline). Fall back to local user.
+      debugPrint('[AUTH] Auto-login network error: $e');
+      if (_currentUser != null) {
+        return true;
+      }
       return false;
     }
   }

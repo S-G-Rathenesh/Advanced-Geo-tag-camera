@@ -216,7 +216,7 @@ class _EvidenceDetailsScreenState extends State<EvidenceDetailsScreen> {
           icon: const Icon(Icons.arrow_back, color: Colors.white),
           onPressed: () => Navigator.pop(context),
         ),
-        actions: [
+        actions: context.read<AuthService>().currentUser?.role == UserRole.officer ? [
           Padding(
             padding: const EdgeInsets.only(right: 16.0),
             child: ElevatedButton.icon(
@@ -242,7 +242,7 @@ class _EvidenceDetailsScreenState extends State<EvidenceDetailsScreen> {
               ),
             ),
           ),
-        ],
+        ] : null,
       ),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator(color: Color(0xFF38BDF8)))
@@ -252,7 +252,6 @@ class _EvidenceDetailsScreenState extends State<EvidenceDetailsScreen> {
                 children: [
                   // IMAGE AREA
                   Container(
-                    height: 300,
                     width: double.infinity,
                     color: Colors.black,
                     child: Builder(builder: (context) {

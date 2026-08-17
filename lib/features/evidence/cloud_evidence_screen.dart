@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 
 import '../../core/constants/app_routes.dart';
@@ -119,11 +120,20 @@ class CloudEvidenceScreenState extends State<CloudEvidenceScreen> {
         
         for (final r in localRecords) {
           if (!mergedMap.containsKey(r.captureId)) {
-            // Only merge if it belongs to current user OR user is supervisor/officer
-            if (r.userId == currentUser?.username || currentUser?.role != UserRole.user) {
-              mergedMap[r.captureId] = r;
-              userNames[r.userId] = r.userId; // local record userId is just the username
-              userRoles[r.userId] = currentUser?.roleLabel ?? 'USER';
+            bool belongsToUser = r.userId == currentUser?.username || r.userId == currentUser?.userId;
+            if (widget.isMyEvidence) {
+              if (belongsToUser) {
+                mergedMap[r.captureId] = r;
+                userNames[r.userId] = currentUser?.name ?? currentUser?.email ?? r.userId;
+                userRoles[r.userId] = currentUser?.roleLabel ?? 'USER';
+              }
+            } else {
+              // Only merge if it belongs to current user OR user is supervisor/officer
+              if (belongsToUser || currentUser?.role != UserRole.user) {
+                mergedMap[r.captureId] = r;
+                userNames[r.userId] = belongsToUser ? (currentUser?.name ?? currentUser?.email ?? r.userId) : r.userId;
+                userRoles[r.userId] = belongsToUser ? (currentUser?.roleLabel ?? 'USER') : 'USER';
+              }
             }
           }
         }
@@ -322,23 +332,26 @@ class CloudEvidenceScreenState extends State<CloudEvidenceScreen> {
                   child: Center(
                     child: Padding(
                       padding: const EdgeInsets.all(24),
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          const Icon(Icons.cloud_off_rounded, size: 48, color: Color(0xFF64748B)),
-                          const SizedBox(height: 12),
-                          Text(
-                            _error!,
-                            textAlign: TextAlign.center,
-                            style: GoogleFonts.inter(color: const Color(0xFF94A3B8), fontSize: 14),
-                          ),
-                          const SizedBox(height: 16),
-                          ElevatedButton(
-                            onPressed: fetchEvidence,
-                            style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF2563EB)),
-                            child: const Text('Retry'),
-                          ),
-                        ],
+                      child: SingleChildScrollView(
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            const Icon(Icons.cloud_off_rounded, size: 48, color: Color(0xFF64748B)),
+                            const SizedBox(height: 12),
+                            Text(
+                              _error!,
+                              textAlign: TextAlign.center,
+                              style: GoogleFonts.inter(color: const Color(0xFF94A3B8), fontSize: 14),
+                            ),
+                            const SizedBox(height: 16),
+                            ElevatedButton(
+                              onPressed: fetchEvidence,
+                              style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF2563EB)),
+                              child: const Text('Retry'),
+                            ),
+                          ],
+                        ),
                       ),
                     ),
                   ),
@@ -540,7 +553,7 @@ class CloudEvidenceScreenState extends State<CloudEvidenceScreen> {
                       const SizedBox(width: 4),
                       Expanded(
                         child: Text(
-                          evidence.address ?? 'Bengaluru, India',
+                          evidence.address ?? 'Unknown Location',
                           style: GoogleFonts.inter(
                             color: const Color(0xFF8E9EB5),
                             fontSize: 12.5,
@@ -556,7 +569,7 @@ class CloudEvidenceScreenState extends State<CloudEvidenceScreen> {
 
                   // Date & Timestamp
                   Text(
-                    '14 Aug 2026 • 10:42 AM',
+                    DateFormat('dd MMM yyyy • hh:mm a').format(evidence.timestamp.toLocal()),
                     style: GoogleFonts.inter(
                       color: const Color(0xFF64748B),
                       fontSize: 12,

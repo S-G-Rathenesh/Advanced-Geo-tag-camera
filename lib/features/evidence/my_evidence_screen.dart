@@ -48,6 +48,15 @@ class _MyEvidenceScreenState extends State<MyEvidenceScreen> {
                       itemBuilder: (context, index) {
                         final record =
                             evidenceService.evidenceList[index];
+
+                        print('\\n[my_evidence]');
+                        print('capture_id=${record.captureId}');
+                        print('timestamp=${record.timestamp.toIso8601String()}');
+                        print('latitude=${record.latitude}');
+                        print('longitude=${record.longitude}');
+                        print('status=${record.syncStatus.name}');
+                        print('------\\n');
+
                         return EvidenceCard(
                           record: record,
                           onTap: () {

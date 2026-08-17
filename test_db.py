@@ -1,0 +1,10 @@
+import sqlite3
+conn = sqlite3.connect('backend/geo_evidence.db')
+cur = conn.cursor()
+cur.execute("SELECT name FROM sqlite_master WHERE type='table'")
+print('Tables:', cur.fetchall())
+cur.execute('PRAGMA table_info(evidence)')
+print('Evidence schema:', cur.fetchall())
+cur.execute('SELECT COUNT(*) FROM evidence')
+print('Evidence count:', cur.fetchone())
+conn.close()

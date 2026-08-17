@@ -24,7 +24,7 @@ class SecureEvidenceImage extends StatefulWidget {
   const SecureEvidenceImage({
     super.key,
     required this.record,
-    this.fit = BoxFit.cover,
+    this.fit = BoxFit.contain,
     this.errorPlaceholder,
     this.onVerified,
     this.onError,
@@ -63,19 +63,6 @@ class _SecureEvidenceImageState extends State<SecureEvidenceImage> {
   }
 
   Future<void> _triggerAuditAndVerify() async {
-    final authService = context.read<AuthService>();
-    final isOfficer = authService.currentUser?.role == UserRole.officer;
-
-    if (!isOfficer) {
-      if (mounted) {
-        setState(() {
-          _isVerifying = false;
-          _integrityError = 'Image access restricted to Officer role.';
-        });
-      }
-      return;
-    }
-
     final cacheKey = widget.record.captureId;
 
     if (_decryptedCache.containsKey(cacheKey)) {

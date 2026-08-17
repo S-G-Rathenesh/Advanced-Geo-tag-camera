@@ -27,6 +27,7 @@ class _OfficerDashboardState extends State<OfficerDashboard> {
     }
     
     if (index == 2 && _currentIndex != 2) {
+      debugPrint('[evidence_navigation] role=officer destination=all_evidence isMyEvidence=false');
       _allEvidenceKey.currentState?.fetchEvidence();
     }
     
@@ -262,6 +263,7 @@ class _OfficerDashboardState extends State<OfficerDashboard> {
                         width: constraints.maxWidth < 300 ? double.infinity : null,
                         child: OutlinedButton(
                           onPressed: () {
+                            debugPrint('[evidence_navigation] role=officer destination=my_evidence isMyEvidence=true');
                             Navigator.push(
                               context,
                               MaterialPageRoute(

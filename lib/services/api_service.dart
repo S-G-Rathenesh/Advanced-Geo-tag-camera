@@ -86,7 +86,7 @@ class ApiService {
       final List<dynamic> data = jsonDecode(response.body);
       return data.map((json) => _parseCloudEvidence(json)).toList();
     } else {
-      throw Exception('Failed to load my evidence: ${response.statusCode}');
+      throw Exception('Failed to load my evidence: ${response.statusCode} - ${response.body}');
     }
   }
 

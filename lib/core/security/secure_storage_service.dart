@@ -43,6 +43,20 @@ class SecureStorageService {
     await _storage.delete(key: AppConstants.refreshTokenKey);
   }
 
+  // ── User Data ─────────────────────────────────────────────────────────
+
+  Future<void> saveUserJson(String jsonStr) async {
+    await _storage.write(key: 'user_json_data', value: jsonStr);
+  }
+
+  Future<String?> getUserJson() async {
+    return _storage.read(key: 'user_json_data');
+  }
+
+  Future<void> deleteUserJson() async {
+    await _storage.delete(key: 'user_json_data');
+  }
+
   // ── Session management ────────────────────────────────────────────────
 
   /// Returns `true` if a JWT token exists in secure storage.
@@ -55,6 +69,7 @@ class SecureStorageService {
   Future<void> clearAll() async {
     await deleteToken();
     await deleteRefreshToken();
+    await deleteUserJson();
     // Intentionally omitting _storage.deleteAll() to prevent wiping the
     // local AES-256-GCM encryption key used for evidence decryption.
   }

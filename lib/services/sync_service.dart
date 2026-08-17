@@ -224,6 +224,12 @@ class SyncService extends ChangeNotifier {
         // Validate that the server actually stored the IV
         try {
           final data = jsonDecode(respStr);
+          print('\\n[upload]');
+          print('capture_id=${record.captureId}');
+          print('HTTP status=${response.statusCode}');
+          print('server response capture_id=${data['capture_id']}');
+          print('------\\n');
+
           if (data['iv_base64'] == null || (data['iv_base64'] as String).isEmpty) {
             debugPrint('FastAPI upload succeeded but iv_base64 is missing in response. Rejecting sync.');
             return false;
