@@ -132,12 +132,21 @@ def get_all_evidence(
         query = query.join(User, Evidence.user_id == User.id).filter(User.department == current_user.department)
     return query.order_by(Evidence.capture_timestamp.desc()).all()
 
-@router.get("/my", response_model=List[EvidenceResponse])
+@router.get("/my")
 def get_my_evidence(
     db: Session = Depends(get_db),
     current_user: User = Depends(require_authenticated_user)
 ):
-    return db.query(Evidence).filter(Evidence.user_id == current_user.id).order_by(Evidence.capture_timestamp.desc()).all()
+    try:
+        results = db.query(Evidence).filter(Evidence.user_id == current_user.id).order_by(Evidence.capture_timestamp.desc()).all()
+        valid_results = []
+        for r in results:
+            valid_results.append(EvidenceResponse.model_validate(r).model_dump())
+        return valid_results
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail=f"Serialization Error: {e}")
 
 @router.get("/{capture_id}", response_model=EvidenceResponse)
 def get_evidence(
