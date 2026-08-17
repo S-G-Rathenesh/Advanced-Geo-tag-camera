@@ -254,42 +254,28 @@ class _EvidenceDetailsScreenState extends State<EvidenceDetailsScreen> {
                   Container(
                     width: double.infinity,
                     color: Colors.black,
-                    child: Builder(builder: (context) {
-                      final isOfficer = context.read<AuthService>().currentUser?.role == UserRole.officer;
-                      
-                      final secureImage = SecureEvidenceImage(
+                    child: EvidenceViewProtectionOverlay(
+                      child: SecureEvidenceImage(
                         record: record,
                         fit: BoxFit.contain,
                         onVerified: (bytes) {
-                          setState(() {
-                            _verifiedBytes = bytes;
-                            _verificationError = null;
-                          });
+                          if (mounted) {
+                            setState(() {
+                              _verifiedBytes = bytes;
+                              _verificationError = null;
+                            });
+                          }
                         },
                         onError: (error) {
-                          setState(() {
-                            _verifiedBytes = null;
-                            _verificationError = error;
-                          });
+                          if (mounted) {
+                            setState(() {
+                              _verifiedBytes = null;
+                              _verificationError = error;
+                            });
+                          }
                         },
-                      );
-
-                      if (isOfficer) {
-                        return EvidenceViewProtectionOverlay(
-                          onTriggered: () {
-                            if (mounted) {
-                              setState(() {
-                                _verifiedBytes = null;
-                                _verificationError = 'Security Alert: Unauthorized recording device detected.';
-                              });
-                            }
-                          },
-                          child: secureImage,
-                        );
-                      }
-                      
-                      return secureImage;
-                    }),
+                      ),
+                    ),
                   ),
 
                   // INTEGRITY VERIFIED
